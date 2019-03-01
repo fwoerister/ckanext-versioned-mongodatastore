@@ -1,4 +1,2 @@
-sqlalchemy
 pytz
 pymongo
-psycopg2==2.7.7
