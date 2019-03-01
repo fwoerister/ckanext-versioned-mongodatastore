@@ -1,3 +1,10 @@
+six
+pyhandle
+click
 sqlalchemy
+mock
+bson
 pytz
 pymongo
+ckanext
+locust

@@ -1,9 +1,0 @@
-{% ckan_extends %}
-
-{% block inner_primary_nav %}
-{{ super() }}
-{% if res.format in ['Database', 'database', 'db'] %}
-{{ h.build_nav_icon('resource_importer', _('Data Importer'), id=pkg.name, resource_id=res.id) }}
-{% endif %}
-
-{% endblock %}

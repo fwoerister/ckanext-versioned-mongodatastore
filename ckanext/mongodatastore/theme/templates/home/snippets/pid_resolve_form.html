@@ -1,0 +1,17 @@
+{% set action = h.url_for(
+controller='ckanext.mongodatastore.controller.ui_controller:QueryStoreUIController',
+action='view_history_query') %}
+
+<div class="module module-search module-narrow module-shallow box">
+    <form class="module-content search-form" method="get" action="{{ action }}">
+        <h3 class="heading">{{ _("Resolve PID") }}</h3>
+        <div class="search-input form-group search-giant">
+            <input aria-label="" id="field-main-search" type="text" class="form-control" name="id" value=""
+                   autocomplete="off" placeholder=""/>
+            <button type="submit">
+                <i class="fa fa-search"></i>
+                <span class="sr-only">{{ _('Resolve') }}</span>
+            </button>
+        </div>
+    </form>
+</div>

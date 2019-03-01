@@ -4,13 +4,9 @@
 
 .. image:: https://travis-ci.org/fwoerister/ckanext-mongodatastore.svg?branch=master
     :target: https://travis-ci.org/fwoerister/ckanext-mongodatastore
-
-.. image:: https://coveralls.io/repos/fwoerister/ckanext-mongodatastore/badge.svg
-  :target: https://coveralls.io/r/fwoerister/ckanext-mongodatastore
-
-.. image:: https://pypip.in/download/ckanext-mongodatastore/badge.svg
-    :target: https://pypi.python.org/pypi//ckanext-mongodatastore/
-    :alt: Downloads
+    
+.. image:: https://coveralls.io/repos/github/fwoerister/ckanext-mongodatastore/badge.svg?branch=master
+   :target: https://coveralls.io/github/fwoerister/ckanext-mongodatastore?branch=master
 
 .. image:: https://pypip.in/version/ckanext-mongodatastore/badge.svg
     :target: https://pypi.python.org/pypi/ckanext-mongodatastore/
@@ -33,16 +29,22 @@
 ckanext-mongodatastore
 ======================
 
-The MongoDatastore is a implementation of the DatastoreBackend interface, provided by the Datastore plugin.
-Providing cite-ability of evolving data is the main goal of this work.
+The MongoDatastore is a datastore implementation for `CKAN <https://www.ckan.org>`_, that uses MongoDB for storing data records. One aspect of this implementation is, that it follows the `RDA Recommendations for Data Citation <https://doi.org/10.15497/RDA00016>`_. This guarantiees citability for every query that is submited to the datastore. In addition this extension is capable of pulling datasets from an existing datasource (e.g. a relational database) into the datastore. A IDatasource Interface enables ckan extension developers to implement their own DataSource. This extension comes with an Postgre DataSource implementation as a proof of concept. For a more detailed explanation check out the `Wiki <https://github.com/fwoerister/ckanext-mongodatastore/wiki>`_.
 
+.. image:: images/BigPicture.png
+   :align: center
+
+*As this extension provides an implementation of the* `IDatastoreBackend <https://docs.ckan.org/en/latest/maintaining/datastore.html#extending-datastore>`_, *therefore the DataStore API can be used as before.*
+
+*Although after installation of this extension the result sets will contain a PID, the resource view needs to be able to show this PID in the UI. The default DataExplorer is not capable of showing PIDs, please checkout my PoC implementation on* `github <https://github.com/fwoerister/ckanext-datacitator>`_.
 
 ------------
 Requirements
 ------------
 
-To run this plugin, a CKAN instance already has to be installed. In addition to the PostgreSQL database a MongoDB
-instance is required. To retrieve the PIDs in the UI, the CKAN plugin 'datacitator' has to be installed
+This CKAN extension is tested with CKAN 2.7 running on Python 2.7.
+
+To run this plugin beside an CKAN a mongo and a postgre database is required. The mongo database is needed for storing the data records and the postgre database is used as a querystore, described in the RDA Recommendations. For both instances a connection string has to be set in the CKAN config file.
 
 ------------
 Installation
@@ -54,19 +56,30 @@ Installation
 
 To install ckanext-mongodatastore:
 
-1. Activate your CKAN virtual environment, for example::
+1. `Install MongoDB <https://docs.mongodb.com/manual/installation/>`_
+
+2. If not already existing, a QueryStore database has to be created::
+
+     sudo -u postgres createuser -S -D -R -P querystore
+     sudo -u postgres createdb -O querystore querystore -E utf-8
+
+3. Activate your CKAN virtual environment, for example::
 
      . /usr/lib/ckan/default/bin/activate
 
-2. Install the ckanext-mongodatastore Python package into your virtual environment::
+4. Install the ckanext-mongodatastore Python package into your virtual environment::
 
      pip install ckanext-mongodatastore
 
-3. Add ``mongodatastore`` to the ``ckan.plugins`` setting in your CKAN
+5. Set the ckanext-mongodatastore specific config settings the CKAN configuration file 
+   (by default the config file is located at
+   ``/etc/ckan/default/production.ini``).
+
+5. Add ``mongodatastore`` to the ``ckan.plugins`` setting in your CKAN
    config file (by default the config file is located at
    ``/etc/ckan/default/production.ini``).
 
-4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu::
+6. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu::
 
      sudo service apache2 reload
 
@@ -74,12 +87,10 @@ To install ckanext-mongodatastore:
 ---------------
 Config Settings
 ---------------
+For running the MongoDb datastore two settings have to configured in your CKAN's configuration file::
 
-Document any optional config settings here. For example::
-
-    # The minimum number of hours to wait before re-checking a resource
-    # (optional, default: 24).
-    ckanext.mongodatastore.some_setting = some_default_value
+    ckan.datastore.write_url = mongodb://[datastorehost]:27017
+    ckan.querystore.url = [URL to your query store database]
 
 
 ------------------------
@@ -107,35 +118,6 @@ To run the tests and produce a coverage report, first make sure you have
 coverage installed in your virtualenv (``pip install coverage``) then run::
 
     nosetests --nologcapture --with-pylons=test.ini --with-coverage --cover-package=ckanext.mongodatastore --cover-inclusive --cover-erase --cover-tests
-
-
----------------------------------
-Registering ckanext-mongodatastore on PyPI
----------------------------------
-
-ckanext-mongodatastore should be availabe on PyPI as
-https://pypi.python.org/pypi/ckanext-mongodatastore. If that link doesn't work, then
-you can register the project on PyPI for the first time by following these
-steps:
-
-1. Create a source distribution of the project::
-
-     python setup.py sdist
-
-2. Register the project::
-
-     python setup.py register
-
-3. Upload the source distribution to PyPI::
-
-     python setup.py sdist upload
-
-4. Tag the first release of the project on GitHub with the version number from
-   the ``setup.py`` file. For example if the version number in ``setup.py`` is
-   0.0.1 then do::
-
-       git tag 0.0.1
-       git push --tags
 
 
 ----------------------------------------

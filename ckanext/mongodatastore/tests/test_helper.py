@@ -28,9 +28,9 @@ class HelpersTest(unittest.TestCase):
         self.assertEqual(list(result.keys()), EXPECTED_KEYS)
 
     def test_calculate_hash_value(self):
-        hash = calculate_hash(TEST_DATA)
-        self.assertEqual(hash, '8e9abc4ad418be2f2f1f2d20da38a948')
+        hash_value = calculate_hash(TEST_DATA)
+        self.assertEqual(hash_value, '8e9abc4ad418be2f2f1f2d20da38a948')
 
     def test_calculate_hash_value_of_empty_json(self):
-        hash = calculate_hash({})
-        self.assertEqual(hash, 'd41d8cd98f00b204e9800998ecf8427e')
+        hash_value = calculate_hash({})
+        self.assertEqual(hash_value, 'd41d8cd98f00b204e9800998ecf8427e')
