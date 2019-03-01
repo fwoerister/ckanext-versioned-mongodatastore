@@ -22,6 +22,11 @@ fi
 # https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
 sed -i '/psycopg2/c\psycopg2' requirements.txt
 python setup.py develop
+
+echo 'print requirements'
+
+cat requirements.txt
+
 pip install -r requirements.txt
 pip install -r dev-requirements.txt
 cd -
