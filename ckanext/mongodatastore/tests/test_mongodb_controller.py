@@ -60,8 +60,9 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         new_resource_id = 'new_resource'
+        primary_key = 'id'
 
-        mongo_cntr.create_resource(new_resource_id)
+        mongo_cntr.create_resource(new_resource_id, primary_key)
         all_ids = mongo_cntr.get_all_ids()
 
         self.assertIn(new_resource_id, all_ids)
