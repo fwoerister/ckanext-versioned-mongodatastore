@@ -8,8 +8,6 @@ from ckan.common import config as ckan_config
 
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
-
-
 log = logging.getLogger(__name__)
 
 querystore_group = paster_click_group(
@@ -24,12 +22,13 @@ querystore_group = paster_click_group(
 def create_schema(config):
     log.debug('start creating schema....')
 
+    load_config(config)
+
     print("===========================================================================================================")
     print('>>> QUERYSTORE DB SETTING <<<')
-    print(config['ckan.querystore.url'])
+    print(ckan_config.get('ckan.querystore.url', None))
     print("===========================================================================================================")
-    querystore_url = ckan_config[u'ckan.querystore.url']
-
+    # querystore_url = ckan_config[u'ckan.querystore.url']
 
     log.debug('schema created!')
 
