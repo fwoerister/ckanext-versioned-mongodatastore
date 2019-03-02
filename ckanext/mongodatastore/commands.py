@@ -5,7 +5,9 @@ import click as click
 
 from ckan.lib.cli import paster_click_group, click_config_option, load_config
 from ckan.common import config as ckan_config
+from sqlalchemy import create_engine
 
+from ckanext.mongodatastore.model import Base
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
 log = logging.getLogger(__name__)
@@ -25,12 +27,10 @@ def create_schema(ctx, config):
 
     log.debug('start creating schema....')
 
-    print("===========================================================================================================")
-    print('>>> QUERYSTORE DB SETTING <<<')
-    print(ckan_config.get('ckan.querystore.url', None))
-    print("===========================================================================================================")
-    # querystore_url = ckan_config[u'ckan.querystore.url']
+    querystore_url = ckan_config[u'ckan.querystore.url']
+    engine = create_engine(querystore_url, echo=True)
 
+    Base.metadata.create_all(engine)
     log.debug('schema created!')
 
 
