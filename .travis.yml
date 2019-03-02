@@ -7,6 +7,7 @@ install:
     - bash bin/travis-build.bash
 services:
     -postgresql
+    -mongodb
 script: sh bin/travis-run.sh
 after_success: coveralls
 sudo: required

@@ -28,3 +28,9 @@ class MongoDbControllerTest(unittest.TestCase):
         datetime_value = datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
         unix_timestamp = convert_to_unix_timestamp(datetime_value)
         self.assertEqual(unix_timestamp, 0)
+
+    def singleton_test(self):
+        first_instance = MongoDbController.getInstance()
+        second_instance = MongoDbController.getInstance()
+
+        self.assertEqual(first_instance, second_instance)
