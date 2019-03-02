@@ -73,7 +73,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertIn(new_resource_id, all_ids)
 
-        self.assertIn('{0}_meta', mongo_cntr.datastore.list_collection_names())
+        self.assertIn('{0}_meta'.format(new_resource_id), mongo_cntr.datastore.list_collection_names())
 
     def delete_empty_resource_test(self):
         mongo_cntr = MongoDbController.getInstance()
