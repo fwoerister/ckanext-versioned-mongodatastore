@@ -2,14 +2,13 @@ import logging
 from datetime import datetime
 
 import click as click
-from sqlalchemy import create_engine
 
 from ckan.lib.cli import paster_click_group, click_config_option, load_config
 from ckan.common import config as ckan_config
 
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
-from model import Base
+
 
 log = logging.getLogger(__name__)
 
@@ -22,16 +21,16 @@ querystore_group = paster_click_group(
     help=u'create query table')
 @click.help_option(u'-h', u'--help')
 @click_config_option
-@click.pass_context
-def create_schema(ctx, config):
+def create_schema(config):
     log.debug('start creating schema....')
-    load_config(config or ctx.obj['config'])
 
+    print("===========================================================================================================")
+    print('>>> QUERYSTORE DB SETTING <<<')
+    print(config['ckan.querystore.url'])
+    print("===========================================================================================================")
     querystore_url = ckan_config[u'ckan.querystore.url']
 
-    engine = create_engine(querystore_url, echo=True)
 
-    Base.metadata.create_all(engine)
     log.debug('schema created!')
 
 
