@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pytz
 
+from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, convert_to_unix_timestamp, MongoDbController
 
 TEST_RESULT_SET = [
@@ -15,6 +16,11 @@ TEST_RESULT_CSV = "1;Florian;12\r\n2;Michael;13\r\n"
 
 
 class MongoDbControllerTest(unittest.TestCase):
+
+    def setUp(self):
+        instance = MongoDbController.getInstance()
+        instance.client.drop_database(CKAN_DATASTORE)
+        instance.datastore = instance.client.get_database(CKAN_DATASTORE)
 
     # helper function tests
 
@@ -66,3 +72,53 @@ class MongoDbControllerTest(unittest.TestCase):
         all_ids = mongo_cntr.get_all_ids()
 
         self.assertIn(new_resource_id, all_ids)
+
+        self.assertIn('{0}_meta', mongo_cntr.datastore.list_collection_names())
+
+    def delete_empty_resource_test(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        new_resource_id = 'new_resource'
+        primary_key = 'id'
+
+        mongo_cntr.create_resource(new_resource_id, primary_key)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.delete_resource(new_resource_id)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.delete_resource(new_resource_id, force=True)
+
+        self.assertFalse(mongo_cntr.resource_exists(new_resource_id))
+
+    def delete_resource_with_records(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        new_resource_id = 'new_resource'
+        primary_key = 'id'
+
+        new_records = [
+            {'id': 1, 'field1': 'abc', 'field2': 123},
+            {'id': 2, 'field1': 'def', 'field2': 456}
+        ]
+
+        mongo_cntr.create_resource(new_resource_id, primary_key)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.upsert(new_resource_id, new_records)
+
+        col = mongo_cntr.datastore.get_collection(new_resource_id)
+        self.assertNotEqual(col.count_documents(), 0)
+
+        mongo_cntr.delete_resource(new_resource_id)
+
+        self.assertEqual(col.count_documents(), 0)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.delete_resource(new_resource_id, force=True)
+
+        self.assertFalse(mongo_cntr.resource_exists(new_resource_id))
