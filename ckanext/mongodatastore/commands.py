@@ -24,6 +24,7 @@ querystore_group = paster_click_group(
 @click_config_option
 @click.pass_context
 def create_schema(ctx, config):
+    log.debug('start creating schema....')
     load_config(config or ctx.obj['config'])
 
     querystore_url = ckan_config[u'ckan.querystore.url']
@@ -31,6 +32,7 @@ def create_schema(ctx, config):
     engine = create_engine(querystore_url, echo=True)
 
     Base.metadata.create_all(engine)
+    log.debug('schema created!')
 
 
 @querystore_group.command(
