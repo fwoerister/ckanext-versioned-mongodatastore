@@ -85,11 +85,11 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
-        mongo_cntr.delete_resource(new_resource_id)
+        mongo_cntr.delete_resource(new_resource_id, None)
 
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
-        mongo_cntr.delete_resource(new_resource_id, force=True)
+        mongo_cntr.delete_resource(new_resource_id, None, force=True)
 
         self.assertFalse(mongo_cntr.resource_exists(new_resource_id))
 
@@ -113,12 +113,12 @@ class MongoDbControllerTest(unittest.TestCase):
         col = mongo_cntr.datastore.get_collection(new_resource_id)
         self.assertNotEqual(col.count_documents(), 0)
 
-        mongo_cntr.delete_resource(new_resource_id)
+        mongo_cntr.delete_resource(new_resource_id, None)
 
         self.assertEqual(col.count_documents(), 0)
 
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
-        mongo_cntr.delete_resource(new_resource_id, force=True)
+        mongo_cntr.delete_resource(new_resource_id, None, force=True)
 
         self.assertFalse(mongo_cntr.resource_exists(new_resource_id))
