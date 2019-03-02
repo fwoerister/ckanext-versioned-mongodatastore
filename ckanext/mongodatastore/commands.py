@@ -19,10 +19,11 @@ querystore_group = paster_click_group(
     help=u'create query table')
 @click.help_option(u'-h', u'--help')
 @click_config_option
-def create_schema(config):
-    log.debug('start creating schema....')
+@click.pass_context
+def create_schema(ctx, config):
+    load_config(config or ctx.obj['config'])
 
-    load_config(config)
+    log.debug('start creating schema....')
 
     print("===========================================================================================================")
     print('>>> QUERYSTORE DB SETTING <<<')
