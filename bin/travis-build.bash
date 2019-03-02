@@ -5,7 +5,8 @@ echo "This is travis-build.bash..."
 
 echo "Installing the packages that CKAN requires..."
 sudo apt-get update -qq
-sudo apt-get install solr-jetty libcommons-fileupload-java
+sudo apt-get install libpq-dev solr-jetty redis-server
+
 
 echo "Installing CKAN and its Python dependencies..."
 git clone https://github.com/ckan/ckan
@@ -48,7 +49,6 @@ echo "Initialising the database..."
 cd ckan
 paster db init -c test-core.ini
 paster --plugin=ckanext-mongodatastore querystore create_schema --config=test.ini
-
 cd -
 
 echo "Installing ckanext-pages and its requirements..."
