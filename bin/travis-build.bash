@@ -54,12 +54,14 @@ echo "Installing ckanext-pages and its requirements..."
 python setup.py develop
 pip install -r requirements.txt
 
-cd ckan
-paster --plugin=ckanext-mongodatastore querystore create_schema --config=test.ini
-cd -
-
 echo "Moving test.ini into a subdir..."
 mkdir subdir
 mv test.ini subdir
+
+echo "Initialising the querystore..."
+
+paster --plugin=ckanext-mongodatastore querystore create_schema --config=subdir/test.ini
+
+
 
 echo "travis-build.bash is done."
