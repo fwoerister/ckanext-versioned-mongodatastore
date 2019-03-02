@@ -47,7 +47,7 @@ sed -i -e 's/solr_url.*/solr_url = http:\/\/127.0.0.1:8983\/solr/' ckan/test-cor
 echo "Initialising the database..."
 cd ckan
 paster db init -c test-core.ini
-paster querystore create_schema --config=test-core.ini
+paster --plugin=ckanext-mongodatastore querystore create_schema --config=/etc/ckan/default/development.ini
 
 cd -
 
