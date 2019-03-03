@@ -353,7 +353,9 @@ class MongoDbController:
             mapper = Code("""
                     function() {
                         for (var key in this) {
-                            emit(key, typeof(this[key]));
+                            if(!this['valid_to']){
+                                emit(key, typeof(this[key]));
+                            }
                         }
                     }
                 """)
