@@ -40,13 +40,13 @@ class MongoDbControllerTest(unittest.TestCase):
 
     # static function tests
 
-    def singleton_test(self):
+    def test_singleton(self):
         first_instance = MongoDbController.getInstance()
         second_instance = MongoDbController.getInstance()
 
         self.assertEqual(first_instance, second_instance)
 
-    def reaload_config_test(self):
+    def test_reaload_config(self):
         new_cfg = {
             'ckan.datastore.write_url': 'localhost:27017',
             'ckan.querystore.url': 'postgresql://query_store:query_store@localhost/query_store',
@@ -62,7 +62,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
     # member function tests
 
-    def create_resource_test(self):
+    def test_create_resource(self):
         mongo_cntr = MongoDbController.getInstance()
 
         new_resource_id = 'new_resource'
@@ -75,7 +75,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertIn('{0}_meta'.format(new_resource_id), mongo_cntr.datastore.list_collection_names())
 
-    def delete_empty_resource_test(self):
+    def test_empty_resource(self):
         mongo_cntr = MongoDbController.getInstance()
 
         new_resource_id = 'new_resource'
@@ -93,7 +93,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertFalse(mongo_cntr.resource_exists(new_resource_id))
 
-    def delete_resource_with_records(self):
+    def test_resource_with_records(self):
         mongo_cntr = MongoDbController.getInstance()
 
         new_resource_id = 'new_resource'
