@@ -115,7 +115,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.delete_resource(new_resource_id, None)
 
-        self.assertEqual(col.count_documents({}), 0)
+        self.assertEqual(col.count_documents({}), 2)
 
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
@@ -178,13 +178,13 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
         result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
-                                                None, 0, 100, None, False)
+                                                None, None, None, None, False)
 
         mongo_cntr.upsert(new_resource_id, updated_records, False)
 
         updated_result = mongo_cntr.query_current_state(new_resource_id, {},
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
-                                                        None, 0, 100, None, False)
+                                                        None, None, None, None, False)
 
         self.assertEqual(len(result['records']), 2)
         self.assertEqual(len(updated_result['records']), 3)
