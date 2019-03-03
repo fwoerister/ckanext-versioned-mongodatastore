@@ -6,6 +6,8 @@ import pytz
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, convert_to_unix_timestamp, MongoDbController
 
+from time import sleep
+
 TEST_RESULT_SET = [
     {'id': 1, 'name': 'Florian', 'age': 12},
     {'id': 2, 'name': 'Michael', 'age': 13}
@@ -177,14 +179,14 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
+        sleep(1)
+
         result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 None, None, None, None, False)
 
-        print(result)
-
-        raw_result = list(mongo_cntr.datastore.get_collection(new_resource_id).find())
-
         mongo_cntr.upsert(new_resource_id, updated_records, False)
+
+        sleep(1)
 
         updated_result = mongo_cntr.query_current_state(new_resource_id, {},
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
