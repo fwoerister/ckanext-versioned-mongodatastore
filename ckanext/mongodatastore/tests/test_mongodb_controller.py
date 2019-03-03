@@ -108,7 +108,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
-        mongo_cntr.upsert(new_resource_id, new_records)
+        mongo_cntr.upsert(new_resource_id, new_records, False)
 
         col = mongo_cntr.datastore.get_collection(new_resource_id)
         self.assertNotEqual(col.count_documents(), 0)
