@@ -177,11 +177,14 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
-        result = list(mongo_cntr.datastore.get_collection(new_resource_id).find({}))
+        result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+                                                None, 0, 100, None, False)
 
         mongo_cntr.upsert(new_resource_id, updated_records, False)
 
-        updated_result = list(mongo_cntr.datastore.get_collection(new_resource_id).find({}))
+        updated_result = mongo_cntr.query_current_state(new_resource_id, {},
+                                                        {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+                                                        None, 0, 100, None, False)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(len(updated_result), 3)
