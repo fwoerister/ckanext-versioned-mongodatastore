@@ -141,9 +141,44 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
         fields = mongo_cntr.resource_fields(new_resource_id)
-        self.assertEqual(fields['schema'], {'id': 'number', 'field1': 'text', 'field2': 'number'})
+
+        self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
+        self.assertEqual(fields['schema']['field1'], 'string')
+        self.assertEqual(fields['schema']['field2'], 'number')
+        self.assertEqual(fields['schema']['id'], 'number')
 
         mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
         fields = mongo_cntr.resource_fields(new_resource_id)
-        self.assertEqual(fields['schema'], {'id': 'number', 'field1': 'number', 'field2': 'number'})
+        self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
+        self.assertEqual(fields['schema']['field1'], 'number')
+        self.assertEqual(fields['schema']['field2'], 'number')
+        self.assertEqual(fields['schema']['id'], 'number')
+
+    def test_upsert(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        new_resource_id = 'new_resource'
+        primary_key = 'id'
+
+        new_records = [
+            {'id': 1, 'field1': 'abc', 'field2': 123},
+            {'id': 2, 'field1': 'def', 'field2': 456}
+        ]
+
+        updated_records = [
+            {'id': 2, 'field1': 'new_value', 'field2': 1},
+            {'id': 3, 'field1': 'ghi', 'field2': 1}
+        ]
+
+        mongo_cntr.create_resource(new_resource_id, primary_key)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.upsert(new_resource_id, new_records, False)
+
+        result = list(mongo_cntr.datastore.get_collection(new_resource_id).find({}))
+
+
+
+        mongo-cntr.upsert(new_resource_id, updated_records, False)
