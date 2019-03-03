@@ -109,7 +109,7 @@ class MongoDbController:
                 {'valid_to': {'$gt': timestamp}}
             ]}}]
 
-            result = self.__query(resource_id, pipeline, 0, 0)
+            result = self.__query(resource_id, pipeline, 0, 0, False)
 
             meta_record = meta.find_one()
             record_id = meta_record['record_id']
