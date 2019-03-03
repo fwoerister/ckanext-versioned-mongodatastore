@@ -179,6 +179,9 @@ class MongoDbControllerTest(unittest.TestCase):
 
         result = list(mongo_cntr.datastore.get_collection(new_resource_id).find({}))
 
+        mongo_cntr.upsert(new_resource_id, updated_records, False)
 
+        updated_result = list(mongo_cntr.datastore.get_collection(new_resource_id).find({}))
 
-        mongo-cntr.upsert(new_resource_id, updated_records, False)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(len(updated_result), 3)
