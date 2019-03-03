@@ -104,7 +104,7 @@ class MongoDbController:
             timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
             timestamp = int(timestamp)
 
-            log.debug('current timestamp is {0}'.format(timestamp))
+            print('current timestamp is {0}'.format(timestamp))
 
             pipeline = [{'$match': {'valid_from': {'$lt': timestamp}}}, {'$match': {'$or': [
                 {'valid_to': {'$exists': 0}},
@@ -113,7 +113,7 @@ class MongoDbController:
 
             result = self.__query(resource_id, pipeline, 0, 0, False)
 
-            log.debug('{0} documents are updated'.format(len(result)))
+            print('{0} documents are updated'.format(len(result)))
 
             meta_record = meta.find_one()
             record_id = meta_record['record_id']
@@ -128,7 +128,7 @@ class MongoDbController:
             override_fields = [{'id': field['id'], 'new_type': field['info']['type_override']} for field in fields if
                                len(field['info']['type_override']) > 0]
 
-            log.debug('{0} fields are updated'.format(len(override_fields)))
+            print('{0} fields are updated'.format(len(override_fields)))
 
             for record in result['records']:
                 for field in override_fields:
