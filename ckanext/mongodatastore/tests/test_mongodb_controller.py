@@ -180,11 +180,14 @@ class MongoDbControllerTest(unittest.TestCase):
         result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 None, None, None, None, False)
 
+        raw_result = list(mongo_cntr.datastore.get_collection(new_resource_id).find())
+
         mongo_cntr.upsert(new_resource_id, updated_records, False)
 
         updated_result = mongo_cntr.query_current_state(new_resource_id, {},
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                         None, None, None, None, False)
 
+        print("raw result length = {0}".format(len(raw_result)))
         self.assertEqual(len(result['records']), 2)
         self.assertEqual(len(updated_result['records']), 3)
