@@ -122,3 +122,28 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr.delete_resource(new_resource_id, None, force=True)
 
         self.assertFalse(mongo_cntr.resource_exists(new_resource_id))
+
+    def test_update_datatypes(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        new_resource_id = 'new_resource'
+        primary_key = 'id'
+
+        new_records = [
+            {'id': 1, 'field1': 'abc', 'field2': 123},
+            {'id': 2, 'field1': 'def', 'field2': 456}
+        ]
+
+        mongo_cntr.create_resource(new_resource_id, primary_key)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.upsert(new_resource_id, new_records, False)
+
+        fields = mongo_cntr.resource_fields(new_resource_id)
+        self.assertEqual(fields[schema], {'id': 'number', 'field1': 'text', 'field2': 'number'})
+
+        mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
+
+        fields = mongo_cntr.resource_fields(new_resource_id)
+        self.assertEqual(fields[schema], {'id': 'number', 'field1': 'number', 'field2': 'number'})
