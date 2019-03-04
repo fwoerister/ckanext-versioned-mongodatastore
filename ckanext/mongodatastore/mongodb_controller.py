@@ -133,6 +133,9 @@ class MongoDbController:
 
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
+
+                        print('new value for file {0} is {1}'.format(field['id'], record[field['id']]))
+
                     except TypeError:
                         print('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                  record[record_id],
@@ -141,7 +144,8 @@ class MongoDbController:
                                                                                                     record[record_id],
                                                                                                     resource_id))
                 record.pop('_id')
-                self.upsert(resource_id, [record], record_id_key=record_id)
+                print('upsert document: {0}'.format(record))
+                self.upsert(resource_id, [record], False)
             # TODO: store override information in meta entry
 
         # TODO: check if record has to be updated at all (in case it did not change, no update has to be performed)
