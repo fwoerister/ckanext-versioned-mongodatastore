@@ -249,13 +249,6 @@ class MongoDbControllerTest(unittest.TestCase):
 
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, False)
 
-        print(result['pid'])
-        print(result['records'])
-        print(new_result['records'])
-        print(history_result['records'])
-
-        self.assertTrue(False)
-
         self.assertEqual(result[u'records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
                                               {u'id': 2, u'field1': u'def', u'field2': 456},
                                               {u'id': 3, u'field1': u'ghi', u'field2': 456}])
