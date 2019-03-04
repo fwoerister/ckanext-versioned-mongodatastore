@@ -153,6 +153,10 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
+        print('collection dump')
+        print('=================================================')
+        print(list(mongo_cntr.datastore.get_collection(new_resource_id).find()))
+
         fields = mongo_cntr.resource_fields(new_resource_id)
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
