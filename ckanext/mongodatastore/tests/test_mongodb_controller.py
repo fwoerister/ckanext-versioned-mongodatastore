@@ -248,6 +248,8 @@ class MongoDbControllerTest(unittest.TestCase):
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, False)
 
         print(result['pid'])
+        print(result['records'])
+        print(history_result['records'])
 
         self.assertTrue(False)
 
