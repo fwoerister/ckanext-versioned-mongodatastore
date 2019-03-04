@@ -128,9 +128,12 @@ class MongoDbController:
             override_fields = [{'id': field['id'], 'new_type': field['info']['type_override']} for field in fields if
                                len(field['info']['type_override']) > 0]
 
+            print("{0} fields are modified")
+            print(override_fields)
+
             for record in result['records']:
                 for field in override_fields:
-
+                    print('{0} - {1}'.format(record['id'], field))
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
 
