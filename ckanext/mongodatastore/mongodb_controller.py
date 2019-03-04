@@ -111,6 +111,10 @@ class MongoDbController:
 
             result = self.__query(resource_id, pipeline, 0, 0, False)
 
+            print(result)
+
+            print("{0} documents are updated".format(len(result['records'])))
+
             meta_record = meta.find_one()
             record_id = meta_record['record_id']
 
