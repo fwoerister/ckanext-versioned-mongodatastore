@@ -212,14 +212,14 @@ class MongoDbControllerTest(unittest.TestCase):
         primary_key = 'id'
 
         new_records = [
-            {'id': 1, 'field1': 'abc', 'field2': 123},
-            {'id': 2, 'field1': 'def', 'field2': 456},
-            {'id': 3, 'field1': 'ghi', 'field2': 456}
+            {u'id': 1, u'field1': u'abc', u'field2': 123},
+            {u'id': 2, u'field1': u'def', u'field2': 456},
+            {u'id': 3, u'field1': u'ghi', u'field2': 456}
         ]
 
         updated_records = [
-            {'id': 3, 'field1': 'new_value', 'field2': 321},
-            {'id': 4, 'field1': 'jkl', 'field2': 432}
+            {u'id': 3, u'field1': u'new_value', u'field2': 321},
+            {u'id': 4, u'field1': u'jkl', u'field2': 432}
         ]
 
         mongo_cntr.create_resource(new_resource_id, primary_key)
@@ -230,30 +230,33 @@ class MongoDbControllerTest(unittest.TestCase):
 
         sleep(1)
 
-        result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+        result = mongo_cntr.query_current_state(new_resource_id, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                 None, None, None, None, False)
 
         mongo_cntr.upsert(new_resource_id, updated_records, False)
 
         sleep(1)
 
-        mongo_cntr.delete_resource(new_resource_id, {'id': 1})
+        mongo_cntr.delete_resource(new_resource_id, {u'id': 1})
 
         sleep(1)
 
-        new_result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+        new_result = mongo_cntr.query_current_state(new_resource_id, {},
+                                                    {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                     None, None, None, None, False)
 
-        history_result = mongo_cntr.retrieve_stored_query(result['pid'], None, None, False)
+        print(result['pid'])
 
-        self.assertEqual(result['records'], [{'id': 1, 'field1': 'abc', 'field2': 123},
-                                             {'id': 2, 'field1': 'def', 'field2': 456},
-                                             {'id': 3, 'field1': 'ghi', 'field2': 456}])
+        history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, False)
 
-        self.assertEqual(new_result['records'], [{'id': 2, 'field1': 'def', 'field2': 456},
-                                                 {'id': 3, 'field1': 'new_value', 'field2': 321},
-                                                 {'id': 4, 'field1': 'jkl', 'field2': 432}])
+        self.assertEqual(result[u'records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
+                                              {u'id': 2, u'field1': u'def', u'field2': 456},
+                                              {u'id': 3, u'field1': u'ghi', u'field2': 456}])
 
-        self.assertEqual(history_result['records'], [{'id': 1, 'field1': 'abc', 'field2': 123},
-                                                     {'id': 2, 'field1': 'def', 'field2': 456},
-                                                     {'id': 3, 'field1': 'ghi', 'field2': 456}])
+        self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456},
+                                                  {u'id': 3, u'field1': u'new_value', u'field2': 321},
+                                                  {u'id': 4, u'field1': u'jkl', u'field2': 432}])
+
+        self.assertEqual(history_result[u'records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
+                                                     {u'id': 2, u'field1': u'def', u'field2': 456},
+                                                     {u'id': 3, u'field1': u'ghi', u'field2': 456}])
