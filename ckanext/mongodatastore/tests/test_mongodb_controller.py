@@ -142,6 +142,8 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
+        sleep(1)
+
         fields = mongo_cntr.resource_fields(new_resource_id)
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
@@ -150,11 +152,9 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertEqual(fields['schema']['id'], 'number')
 
         mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
-        mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
-
-        sleep(1)
 
         fields = mongo_cntr.resource_fields(new_resource_id)
+
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
         self.assertEqual(fields['schema']['field1'], 'number')
         self.assertEqual(fields['schema']['field2'], 'number')
