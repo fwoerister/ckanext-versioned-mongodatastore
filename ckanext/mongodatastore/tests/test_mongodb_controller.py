@@ -132,8 +132,8 @@ class MongoDbControllerTest(unittest.TestCase):
         primary_key = 'id'
 
         new_records = [
-            {'id': 1, 'field1': 'abc', 'field2': 123},
-            {'id': 2, 'field1': 'def', 'field2': 456}
+            {'id': 1, 'field1': '123', 'field2': 123},
+            {'id': 2, 'field1': '456', 'field2': 456}
         ]
 
         mongo_cntr.create_resource(new_resource_id, primary_key)
