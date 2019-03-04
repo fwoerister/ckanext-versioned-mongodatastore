@@ -113,7 +113,7 @@ class MongoDbController:
 
             print(result)
 
-            print("{0} documents are updated".format(len(result['records'])))
+            print("{0} documents are updated".format(len(list(result['records']))))
 
             meta_record = meta.find_one()
             record_id = meta_record['record_id']
