@@ -134,6 +134,9 @@ class MongoDbController:
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
                     except TypeError:
+                        print('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
+                                                                                                 record[record_id],
+                                                                                                 resource_id))
                         log.warn('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                     record[record_id],
                                                                                                     resource_id))
