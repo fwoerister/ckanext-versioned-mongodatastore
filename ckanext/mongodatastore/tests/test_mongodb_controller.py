@@ -233,6 +233,8 @@ class MongoDbControllerTest(unittest.TestCase):
         result = mongo_cntr.query_current_state(new_resource_id, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                 None, None, None, None, False)
 
+        sleep(2)
+
         mongo_cntr.upsert(new_resource_id, updated_records, False)
 
         sleep(2)
