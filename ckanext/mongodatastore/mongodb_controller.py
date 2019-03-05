@@ -276,6 +276,7 @@ class MongoDbController:
         def __query(self, resource_id, pipeline, offset, limit, include_total, check_integrity=False):
             col, meta = self.__get_collections(resource_id)
 
+            print(pipeline)
             resultset_hash = calculate_hash(col.aggregate(pipeline))
 
             if check_integrity:
