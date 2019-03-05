@@ -116,7 +116,7 @@ class MongoDbController:
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
             timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
 
-            pipeline = [{'$match': {'_id': {'$le': timestamp}}}, {'$match': {'$or': [
+            pipeline = [{'$match': {'_id': {'$lte': timestamp}}}, {'$match': {'$or': [
                 {'valid_to': {'$exists': 0}},
                 {'valid_to': {'$gt': timestamp}}
             ]}}]
@@ -235,7 +235,7 @@ class MongoDbController:
                 projection = normalize_json(projection)
 
             pipeline = [
-                {'$match': {'_id': {'$le': timestamp}}},
+                {'$match': {'_id': {'$lte': timestamp}}},
                 {'$match': {'$or': [{'$exists': {'valid_to': 0}}, {'valid_to': {'$gt': timestamp}}]}},
                 {'$group': generate_group_expression(projection)},
                 {'$match': statement},
@@ -358,6 +358,8 @@ class MongoDbController:
 
             # result = col.map_reduce(mapper, reducer, "{0}_keys".format(resource_id))
             schema = OrderedDict()
+
+            result = list(result)[0]
 
             for key in sorted(result['keys']):
                 schema[key] = 'text'  # TODO: guess data type
