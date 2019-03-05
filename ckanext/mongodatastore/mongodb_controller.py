@@ -10,6 +10,7 @@ from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
 
+from ckanext.mongodatastore import helper
 from ckanext.mongodatastore.helper import normalize_json, CKAN_DATASTORE, calculate_hash, HASH_ALGORITHM
 from ckanext.mongodatastore.query_store import QueryStore
 
@@ -291,10 +292,10 @@ class MongoDbController:
                 else:
                     count = count[0]['count']
 
-            query = json.JSONEncoder().encode(pipeline)
+            query = helper.JSONEncoder().encode(pipeline)
             # the timestamps have to be removed, otherwise the querystore would detected a new query every time,
             # as the timestamps within the query change the hash all the time
-            query_with_removed_ts = json.JSONEncoder().encode(pipeline[1:])
+            query_with_removed_ts = helper.JSONEncoder().encode(pipeline[1:])
 
             if offset and offset > 0:
                 pipeline.append({'$skip': offset})
