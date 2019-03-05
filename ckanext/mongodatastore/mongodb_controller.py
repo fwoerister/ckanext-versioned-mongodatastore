@@ -100,7 +100,8 @@ class MongoDbController:
                 self.client.get_database(CKAN_DATASTORE).drop_collection(resource_id)
             else:
                 col = self.client.get_database(CKAN_DATASTORE).get_collection(resource_id)
-                timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
+
+                timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
 
                 if filters:
                     for record in col.find({'$and': [{'valid_to': {'$exists': 0}}, filters]}):
