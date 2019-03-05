@@ -6,7 +6,7 @@ from collections import OrderedDict
 from datetime import datetime
 
 import pytz
-from bson.code import Code
+from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
 
@@ -41,9 +41,21 @@ def convert_to_csv(result_set, fields):
     return returnval
 
 
-def convert_to_unix_timestamp(datetime_value):
+def convert_to_object_id(datetime_value):
     epoch = datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
-    return (datetime_value - epoch).total_seconds()
+    hex_timestamp = hex(int((datetime_value - epoch).total_seconds()))[2:]
+    return ObjectId(hex_timestamp + '0000000000000000')
+
+
+def generate_group_expression(projection):
+    expression = OrderedDict()
+
+    expression['_id'] = '${0}'.format(id_key)
+
+    for key in projection:
+        expression[key] = {'$last': '$id'}
+
+    return expression
 
 
 # TODO: implement session handling + rollbacks in case of failed transactions
@@ -101,10 +113,9 @@ class MongoDbController:
             col, meta = self.__get_collections(resource_id)
 
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
-            timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
-            timestamp = int(timestamp)
+            timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
 
-            pipeline = [{'$match': {'valid_from': {'$lt': timestamp}}}, {'$match': {'$or': [
+            pipeline = [{'$match': {'_id': {'$le': timestamp}}}, {'$match': {'$or': [
                 {'valid_to': {'$exists': 0}},
                 {'valid_to': {'$gt': timestamp}}
             ]}}]
@@ -165,29 +176,8 @@ class MongoDbController:
                                                  'In this collection the id attribute is "{0}"'.format(record_id_key))
 
             for record in records:
-                # TODO first update the valid_to field of the old record with { '$toInt': '$currentDate' },
-                #  then insert new record
-
                 if not dry_run:
                     result = col.insert_one(record)
-
-                prev_record = col.find_one({'$and': [{record_id_key: record[record_id_key]},
-                                                     {'valid_to': {'$exists': 0}},
-                                                     {'valid_from': {'$exists': 1}}]})
-
-                if prev_record:
-                    if not dry_run:
-                        col.update_one({'_id': prev_record['_id']},
-                                       {'$set': {
-                                           'valid_to': convert_to_unix_timestamp(
-                                               result.inserted_id.generation_time)}},
-                                       )
-
-                if not dry_run:
-                    col.update_one({'_id': result.inserted_id},
-                                   {'$set': {
-                                       'valid_from': convert_to_unix_timestamp(
-                                           result.inserted_id.generation_time)}})
 
         def retrieve_stored_query(self, pid, offset, limit, check_integrity=False, records_format='objects'):
             q = self.querystore.retrieve_query(pid)
@@ -224,8 +214,7 @@ class MongoDbController:
                                 records_format='objects', check_integrity=False):
 
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
-            timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
-            timestamp = int(timestamp)
+            timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
 
             if sort is None:
                 sort = [{'id': 1}]
@@ -244,10 +233,13 @@ class MongoDbController:
             if projection:
                 projection = normalize_json(projection)
 
-            pipeline = [{'$match': {'valid_from': {'$lt': timestamp}}}, {'$match': {'$or': [
-                {'valid_to': {'$exists': 0}},
-                {'valid_to': {'$gt': timestamp}}
-            ]}}, {'$match': statement}, {'$sort': sort_dict}]
+            pipeline = [
+                {'$match': {'_id': {'$le': timestamp}}},
+                {'$match': {'$or': [{'$exists': {'valid_to': 0}}, {'valid_to': {'$gt': timestamp}}]}},
+                {'$group': generate_group_expression(projection)},
+                {'$match': statement},
+                {'$sort': sort}
+            ]
 
             if distinct:
                 group_expr = {'$group': {'_id': {}}}
@@ -255,6 +247,7 @@ class MongoDbController:
                     if field != '_id':
                         group_expr['$group']['_id'][field] = '${0}'.format(field)
                         group_expr['$group'][field] = {'$first': '${0}'.format(field)}
+
                 log.debug('$group stage: {0}'.format(group_expr))
                 pipeline.append(group_expr)
 
@@ -296,18 +289,9 @@ class MongoDbController:
                     count = count[0]['count']
 
             query = json.JSONEncoder().encode(pipeline)
-
-            ts_from = pipeline[0]['$match']['valid_from']['$lt']
-            ts_to = pipeline[1]['$match']['$or'][1]['valid_to']['$gt']
-
             # the timestamps have to be removed, otherwise the querystore would detected a new query every time,
             # as the timestamps within the query change the hash all the time
-            pipeline[0]['$match']['valid_from']['$lt'] = 0
-            pipeline[1]['$match']['$or'][1]['valid_to']['$gt'] = 0
-            query_with_removed_ts = json.JSONEncoder().encode(pipeline)
-
-            pipeline[0]['$match']['valid_from']['$lt'] = ts_from
-            pipeline[1]['$match']['$or'][1]['valid_to']['$gt'] = ts_to
+            query_with_removed_ts = json.JSONEncoder().encode(pipeline[1:])
 
             if offset and offset > 0:
                 pipeline.append({'$skip': offset})
@@ -360,56 +344,24 @@ class MongoDbController:
             return result
 
         def resource_fields(self, resource_id):
-            # TODO: just consider current valid records! -> atm all records are used for retrieving the datatype
-
             col, meta = self.__get_collections(resource_id)
 
-            mapper = Code("""
-                    function() {
-                        for (var key in this) {
-                            if(!this['valid_to']){
-                                emit(key, typeof(this[key]));
-                            }
-                        }
-                    }
-                """)
+            pipeline = [
+                {'$match': {'$exists': {'valid_to': 0}}},
+                {'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}},
+                {'$unwind': '$arrayofkeyvalue'},
+                {'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}}
+            ]
 
-            # finding the most occuring type implemented, according Matthew Flaschen's approach:
-            # https://stackoverflow.com/questions/1053843/get-the-element-with-the-highest-occurrence-in-an-array
+            result = col.aggregate(pipeline)
 
-            reducer = Code("""
-                    function(key, array) {
-                        
-                        if(array.length == 0)
-                            return null;
-                        var modeMap = {};
-                        var maxEl = array[0], maxCount = 1;
-                        for(var i = 0; i < array.length; i++)
-                        {
-                            var el = array[i];
-                            if(modeMap[el] == null)
-                                modeMap[el] = 1;
-                            else
-                                modeMap[el]++;  
-                            if(modeMap[el] > maxCount)
-                            {
-                                maxEl = el;
-                                maxCount = modeMap[el];
-                            }
-                        }
-                        
-                        return maxEl;
-                    }
-                """)
-
-            result = col.map_reduce(mapper, reducer, "{0}_keys".format(resource_id))
+            # result = col.map_reduce(mapper, reducer, "{0}_keys".format(resource_id))
             schema = OrderedDict()
-            for key in result.find():
-                if key['_id'] not in ['_id', 'valid_from', 'valid_to']:
-                    schema[key['_id']] = key['value']
+
+            for key in sorted(result['keys']):
+                schema[key] = 'text'  # TODO: guess data type
 
             log.debug(meta.find_one())
-
             return {u'schema': schema, u'meta': meta.find_one()}
 
     @classmethod

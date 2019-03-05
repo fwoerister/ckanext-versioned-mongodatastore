@@ -30,4 +30,4 @@ class Query(Base):
     query_hash = Column(TEXT)
     hash_algorithm = Column(TEXT)
     result_set_hash = Column(TEXT)
-    timestamp = Column(INTEGER)
+    timestamp = Column(TEXT)
