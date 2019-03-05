@@ -240,7 +240,7 @@ class MongoDbController:
                 {'$match': {'$or': [{'valid_to': {'$exists': 0}}, {'valid_to': {'$gt': timestamp}}]}},
                 {'$group': generate_group_expression(projection)},
                 {'$match': statement},
-                {'$sort': sort}
+                {'$sort': sort_dict}
             ]
 
             if distinct:
