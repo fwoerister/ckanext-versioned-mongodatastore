@@ -53,7 +53,8 @@ def generate_group_expression(projection):
     expression['_id'] = '$id'
 
     for key in projection:
-        expression[key] = {'$last': '$id'}
+        if key not in ['_id', 'id']:
+            expression[key] = {'$last': '$id'}
 
     return expression
 
