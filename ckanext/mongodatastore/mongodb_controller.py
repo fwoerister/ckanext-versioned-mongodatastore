@@ -236,7 +236,7 @@ class MongoDbController:
 
             pipeline = [
                 {'$match': {'_id': {'$lte': timestamp}}},
-                {'$match': {'$or': [{'$exists': {'valid_to': 0}}, {'valid_to': {'$gt': timestamp}}]}},
+                {'$match': {'$or': [{'valid_to': {'$exists': 0}}, {'valid_to': {'$gt': timestamp}}]}},
                 {'$group': generate_group_expression(projection)},
                 {'$match': statement},
                 {'$sort': sort}
