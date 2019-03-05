@@ -365,7 +365,7 @@ class MongoDbController:
 
             for key in sorted(result['keys']):
                 if key not in ['_id', 'valid_to']:
-                    schema[key] = 'text'  # TODO: guess data type
+                    schema[key] = 'string'  # TODO: guess data type
 
             log.debug(meta.find_one())
             return {u'schema': schema, u'meta': meta.find_one()}
