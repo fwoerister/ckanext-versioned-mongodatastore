@@ -50,7 +50,7 @@ def convert_to_object_id(datetime_value):
 def generate_group_expression(projection):
     expression = OrderedDict()
 
-    expression['_id'] = '${0}'.format(id_key)
+    expression['_id'] = '$id'
 
     for key in projection:
         expression[key] = {'$last': '$id'}
