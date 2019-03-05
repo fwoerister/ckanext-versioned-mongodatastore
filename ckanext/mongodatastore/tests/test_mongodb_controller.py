@@ -2,9 +2,10 @@ import unittest
 from datetime import datetime
 
 import pytz
+from bson import ObjectId
 
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
-from ckanext.mongodatastore.mongodb_controller import convert_to_csv, convert_to_unix_timestamp, MongoDbController
+from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, convert_to_object_id
 
 from time import sleep
 
@@ -30,15 +31,10 @@ class MongoDbControllerTest(unittest.TestCase):
         result = str(convert_to_csv(TEST_RESULT_SET, TEST_RESULT_SET_KEYS))
         self.assertEqual(result, TEST_RESULT_CSV)
 
-    def test_convert_to_unix_timestamp(self):
+    def test_convert_to_object_id(self):
         datetime_value = datetime(2019, 3, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
-        unix_timestamp = convert_to_unix_timestamp(datetime_value)
-        self.assertEqual(unix_timestamp, 1551398400)
-
-    def test_convert_to_zero_timestamp(self):
-        datetime_value = datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
-        unix_timestamp = convert_to_unix_timestamp(datetime_value)
-        self.assertEqual(unix_timestamp, 0)
+        object_id = convert_to_object_id(datetime_value)
+        self.assertEqual(object_id, ObjectId('5c7876000000000000000000'))
 
     # static function tests
 
