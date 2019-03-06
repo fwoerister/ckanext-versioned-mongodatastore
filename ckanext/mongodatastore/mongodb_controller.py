@@ -175,7 +175,7 @@ class MongoDbController:
                 if not dry_run:
                     result = col.insert_one(record)
 
-        def retrieve_stored_query(self, pid, offset, limit, check_integrity=False, records_format='objects'):
+        def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)
 
             if q:
@@ -205,7 +205,7 @@ class MongoDbController:
                 raise QueryNotFoundException('Unfortunately there is no query stored with PID {0}'.format(pid))
 
         def query_current_state(self, resource_id, statement, projection, sort, offset, limit, distinct, include_total,
-                                records_format='objects', check_integrity=False):
+                                records_format='objects'):
 
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
             timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))

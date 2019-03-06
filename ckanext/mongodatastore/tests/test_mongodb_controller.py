@@ -224,26 +224,18 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
-        sleep(2)
-
         result = mongo_cntr.query_current_state(new_resource_id, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
-                                                None, None, None, None, False)
-
-        sleep(2)
+                                                None, None, None, False, True)
 
         mongo_cntr.upsert(new_resource_id, updated_records, False)
 
-        sleep(2)
-
         mongo_cntr.delete_resource(new_resource_id, {u'id': 1})
-
-        sleep(2)
 
         new_result = mongo_cntr.query_current_state(new_resource_id, {},
                                                     {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
-                                                    None, None, None, None, False)
+                                                    None, None, None, False, True)
 
-        history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, False)
+        history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
 
         self.assertEqual(result[u'records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
                                               {u'id': 2, u'field1': u'def', u'field2': 456},
