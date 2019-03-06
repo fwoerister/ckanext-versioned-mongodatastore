@@ -17,7 +17,7 @@ class QueryStore:
     def __init__(self, querystore_url):
         self.engine = create_engine(querystore_url, echo=False)
 
-    def store_query(self, resource_id, query, query_with_removed_ts, timestamp, result_hash, query_hash,
+    def store_query(self, resource_id, query, timestamp, result_hash, query_hash,
                     hash_algorithm):
         Session = sessionmaker(bind=self.engine)
         session = Session()
@@ -31,7 +31,6 @@ class QueryStore:
             q = Query()
             q.resource_id = resource_id
             q.query = query,
-            q.query_with_removed_ts = query_with_removed_ts
             q.query_hash = query_hash
             q.result_set_hash = result_hash
             q.timestamp = timestamp

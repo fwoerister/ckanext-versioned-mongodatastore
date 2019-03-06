@@ -118,16 +118,9 @@ class MongoDbController:
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
             timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
 
-            pipeline = [{'$match': {'_id': {'$lte': timestamp}}}, {'$match': {'$or': [
-                {'valid_to': {'$exists': 0}},
-                {'valid_to': {'$gt': timestamp}}
-            ]}}]
+            pipeline = [{'$match': {}}]
 
-            result = self.__query(resource_id, pipeline, 0, 0, False)
-
-            print(result)
-
-            # print("{0} documents are updated".format(len(list(result['records']))))
+            result = self.__query(resource_id, pipeline, timestamp, None, None, False)
 
             meta_record = meta.find_one()
             record_id = meta_record['record_id']
@@ -190,12 +183,10 @@ class MongoDbController:
 
                 result = self.__query(q.resource_id,
                                       pipeline,
+                                      q.timestamp,
                                       offset,
                                       limit,
                                       check_integrity)
-
-                if check_integrity:
-                    return result == q.result_set_hash
 
                 result['pid'] = pid
                 result['query'] = q
@@ -224,9 +215,6 @@ class MongoDbController:
             else:
                 sort = sort + [{'id': 1}]
 
-            projection = normalize_json(projection)
-            statement = normalize_json(statement)
-
             sort_dict = OrderedDict()
             for sort_entry in sort:
                 assert (len(sort_entry.keys()) == 1)
@@ -237,8 +225,6 @@ class MongoDbController:
                 projection = normalize_json(projection)
 
             pipeline = [
-                {'$match': {'_id': {'$lte': timestamp}}},
-                {'$match': {'$or': [{'valid_to': {'$exists': 0}}, {'valid_to': {'$gt': timestamp}}]}},
                 {'$group': generate_group_expression(projection)},
                 {'$match': statement},
                 {'$sort': sort_dict}
@@ -258,11 +244,10 @@ class MongoDbController:
                 log.debug('projection: {0}'.format(projection))
                 pipeline.append({'$project': projection})
 
-            result = self.__query(resource_id, pipeline, offset, limit, include_total, check_integrity)
+            result = self.__query(resource_id, pipeline, timestamp, offset, limit, include_total)
 
-            pid = self.querystore.store_query(resource_id, result['query'], result['query_with_removed_ts'], timestamp,
-                                              result['records_hash'], result[
-                                                  'query_hash'], HASH_ALGORITHM().name)
+            pid = self.querystore.store_query(resource_id, result['query'], timestamp,
+                                              result['records_hash'], result['query_hash'], HASH_ALGORITHM().name)
 
             result['pid'] = pid
 
@@ -275,17 +260,30 @@ class MongoDbController:
 
             return result
 
-        def __query(self, resource_id, pipeline, offset, limit, include_total, check_integrity=False):
+        def __query(self, resource_id, pipeline, timestamp, offset, limit, include_total):
             col, meta = self.__get_collections(resource_id)
 
-            print(pipeline)
-            resultset_hash = calculate_hash(col.aggregate(pipeline))
+            history_stage = [
+                {'$match': {'_id': {'$lte': timestamp}}},
+                {'$match': {'$or': [{'valid_to': {'$exists': 0}}, {'valid_to': {'$gt': timestamp}}]}}
+            ]
 
-            if check_integrity:
-                return resultset_hash
+            pagination_stage = []
+
+            if offset and offset > 0:
+                pagination_stage.append({'$skip': offset})
+
+            if limit:
+                if 0 < limit <= self.rows_max:
+                    pagination_stage.append({'$limit': limit})
+                if limit < self.rows_max:
+                    pipeline.append({'$limit': self.rows_max})
+                    limit = self.rows_max
+
+            resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline))
 
             if include_total:
-                count = list(col.aggregate(pipeline + [{'$count': 'count'}]))
+                count = col.aggregate(history_stage + pipeline + [{u'$count': u'count'}])
 
                 if len(count) == 0:
                     count = 0
@@ -293,48 +291,14 @@ class MongoDbController:
                     count = count[0]['count']
 
             query = helper.JSONEncoder().encode(pipeline)
-            # the timestamps have to be removed, otherwise the querystore would detected a new query every time,
-            # as the timestamps within the query change the hash all the time
-            query_with_removed_ts = helper.JSONEncoder().encode(pipeline[1:])
 
-            if offset and offset > 0:
-                pipeline.append({'$skip': offset})
-
-            if limit:
-                if 0 < limit <= self.rows_max:
-                    pipeline.append({'$limit': limit})
-                if limit < self.rows_max:
-                    pipeline.append({'$limit': self.rows_max})
-                    limit = self.rows_max
-
-            log.debug('final pipeline: {0}'.format(pipeline))
-            log.debug('limit: {0}'.format(limit))
-            log.debug('rows_max: {0}'.format(self.rows_max))
-
-            log.debug('offset: {0}'.format(offset))
-            result = col.aggregate(pipeline)
-
-            projection = [stage['$project'] for stage in pipeline if '$project' in stage.keys()]
-            assert (len(projection) <= 1)
-            if len(projection) == 1:
-                projection = projection[0]
-                projection = [field for field in projection if projection[field] == 1]
-
-                schema = self.resource_fields(resource_id)['schema']
-                fields = []
-                for field in schema.keys():
-                    if field in projection:
-                        fields.append({'id': field, 'type': schema[field]})
-            else:
-                fields = []
+            result = col.aggregate(history_stage + pipeline + pagination_stage)
 
             query_hash = calculate_hash(query_with_removed_ts)
 
             result = {'records': result,
-                      'fields': fields,
                       'records_hash': resultset_hash,
                       'query': query,
-                      'query_with_removed_ts': query_with_removed_ts,
                       'query_hash': query_hash}
 
             if include_total:
@@ -346,6 +310,78 @@ class MongoDbController:
                 result['offset'] = offset
 
             return result
+
+        # def __query(self, resource_id, pipeline, offset, limit, include_total, check_integrity=False):
+        #     col, meta = self.__get_collections(resource_id)
+        #
+        #     print(pipeline)
+        #     resultset_hash = calculate_hash(col.aggregate(pipeline))
+        #
+        #     if check_integrity:
+        #         return resultset_hash
+        #
+        #     if include_total:
+        #         count = list(col.aggregate(pipeline + [{'$count': 'count'}]))
+        #
+        #         if len(count) == 0:
+        #             count = 0
+        #         else:
+        #             count = count[0]['count']
+        #
+        #     query = helper.JSONEncoder().encode(pipeline)
+        #     # the timestamps have to be removed, otherwise the querystore would detected a new query every time,
+        #     # as the timestamps within the query change the hash all the time
+        #     query_with_removed_ts = helper.JSONEncoder().encode(pipeline[1:])
+        #
+        #     if offset and offset > 0:
+        #         pipeline.append({'$skip': offset})
+        #
+        #     if limit:
+        #         if 0 < limit <= self.rows_max:
+        #             pipeline.append({'$limit': limit})
+        #         if limit < self.rows_max:
+        #             pipeline.append({'$limit': self.rows_max})
+        #             limit = self.rows_max
+        #
+        #     log.debug('final pipeline: {0}'.format(pipeline))
+        #     log.debug('limit: {0}'.format(limit))
+        #     log.debug('rows_max: {0}'.format(self.rows_max))
+        #
+        #     log.debug('offset: {0}'.format(offset))
+        #     result = col.aggregate(pipeline)
+        #
+        #     projection = [stage['$project'] for stage in pipeline if '$project' in stage.keys()]
+        #     assert (len(projection) <= 1)
+        #     if len(projection) == 1:
+        #         projection = projection[0]
+        #         projection = [field for field in projection if projection[field] == 1]
+        #
+        #         schema = self.resource_fields(resource_id)['schema']
+        #         fields = []
+        #         for field in schema.keys():
+        #             if field in projection:
+        #                 fields.append({'id': field, 'type': schema[field]})
+        #     else:
+        #         fields = []
+        #
+        #     query_hash = calculate_hash(query_with_removed_ts)
+        #
+        #     result = {'records': result,
+        #               'fields': fields,
+        #               'records_hash': resultset_hash,
+        #               'query': query,
+        #               'query_with_removed_ts': query_with_removed_ts,
+        #               'query_hash': query_hash}
+        #
+        #     if include_total:
+        #         result['total'] = count
+        #
+        #     if limit:
+        #         result['limit'] = limit
+        #     if offset:
+        #         result['offset'] = offset
+        #
+        #     return result
 
         def resource_fields(self, resource_id):
             col, meta = self.__get_collections(resource_id)
