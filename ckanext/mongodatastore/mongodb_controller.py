@@ -173,7 +173,7 @@ class MongoDbController:
 
             for record in records:
                 if not dry_run:
-                    result = col.insert_one(record)
+                    col.insert_one(record)
 
         def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)
@@ -186,7 +186,7 @@ class MongoDbController:
                                       ObjectId(q.timestamp),
                                       offset,
                                       limit,
-                                      check_integrity)
+                                      True)
 
                 result['pid'] = pid
                 result['query'] = q
