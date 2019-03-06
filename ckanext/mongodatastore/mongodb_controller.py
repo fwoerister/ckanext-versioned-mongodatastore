@@ -283,7 +283,7 @@ class MongoDbController:
             resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline))
 
             if include_total:
-                count = col.aggregate(history_stage + pipeline + [{u'$count': u'count'}])
+                count = list(col.aggregate(history_stage + pipeline + [{u'$count': u'count'}]))
 
                 if len(count) == 0:
                     count = 0
