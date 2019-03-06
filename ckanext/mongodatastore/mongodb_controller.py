@@ -294,7 +294,7 @@ class MongoDbController:
 
             result = col.aggregate(history_stage + pipeline + pagination_stage)
 
-            query_hash = calculate_hash(query_with_removed_ts)
+            query_hash = calculate_hash(query)
 
             result = {'records': result,
                       'records_hash': resultset_hash,
