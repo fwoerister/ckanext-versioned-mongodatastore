@@ -183,7 +183,7 @@ class MongoDbController:
 
                 result = self.__query(q.resource_id,
                                       pipeline,
-                                      q.timestamp,
+                                      ObjectId(q.timestamp),
                                       offset,
                                       limit,
                                       check_integrity)
@@ -246,7 +246,7 @@ class MongoDbController:
 
             result = self.__query(resource_id, pipeline, timestamp, offset, limit, include_total)
 
-            pid = self.querystore.store_query(resource_id, result['query'], timestamp,
+            pid = self.querystore.store_query(resource_id, result['query'], str(timestamp),
                                               result['records_hash'], result['query_hash'], HASH_ALGORITHM().name)
 
             result['pid'] = pid
