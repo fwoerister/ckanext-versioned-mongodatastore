@@ -54,8 +54,8 @@ def generate_group_expression(projection):
     expression['_id'] = '$id'
 
     for key in projection:
-        if key not in ['_id', 'id']:
-            expression[key] = {'$last': '$id'}
+        if key not in ['_id']:
+            expression[key] = {'$last': '${0}'.format(key)}
 
     return expression
 
@@ -191,14 +191,27 @@ class MongoDbController:
                 result['pid'] = pid
                 result['query'] = q
 
-                if records_format == 'csv':
-                    query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
-                    projection = query[-1]['$project']
-                    fields = [field for field in projection if projection[field] == 1]
+                query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
+                projection = [projection for projection in query if '$project' in projection.keys()][0]['$project']
+                fields = [field for field in projection if projection[field] == 1]
 
+                if records_format == 'csv':
                     result['records'] = convert_to_csv(result['records'], fields)
                 else:
                     result['records'] = list(result['records'])
+
+                log.debug(projection)
+
+                schema = self.resource_fields(q.resource_id)['schema']
+                schema_fields = []
+                for field in schema.keys():
+                    log.debug(field)
+                    if field in projection:
+                        schema_fields.append({'id': field, 'type': schema[field]})
+
+                result['fields'] = schema_fields
+
+                log.debug('schema fields {0}'.format(schema_fields))
 
                 return result
             else:
@@ -251,6 +264,15 @@ class MongoDbController:
 
             result['pid'] = pid
 
+            schema = self.resource_fields(resource_id)['schema']
+            schema_fields = []
+            for field in schema.keys():
+                log.debug(field)
+                if field in projection:
+                    schema_fields.append({'id': field, 'type': schema[field]})
+
+            result['fields'] = schema_fields
+
             if records_format == 'objects':
                 result['records'] = list(result['records'])
             elif records_format == 'csv':
@@ -292,11 +314,13 @@ class MongoDbController:
 
             query = helper.JSONEncoder().encode(pipeline)
 
-            result = col.aggregate(history_stage + pipeline + pagination_stage)
+            records = col.aggregate(history_stage + pipeline + pagination_stage)
 
             query_hash = calculate_hash(query)
 
-            result = {'records': result,
+            schema = self.resource_fields(resource_id)['schema']
+
+            result = {'records': list(records),
                       'records_hash': resultset_hash,
                       'query': query,
                       'query_hash': query_hash}
@@ -401,11 +425,16 @@ class MongoDbController:
             result = list(result)[0]
 
             for key in sorted(result['keys']):
-                if key not in ['_id', 'valid_to']:
+                if key not in ['_id', 'valid_to', 'id']:
                     schema[key] = 'string'  # TODO: guess data type
+                if key == 'id':
+                    schema['id'] = 'number'
 
-            log.debug(meta.find_one())
-            return {u'schema': schema, u'meta': meta.find_one()}
+            result = {u'schema': schema, u'meta': meta.find_one()}
+
+            log.debug('""""""""""""""resource_fields: RESULT""""""""""""""""""')
+            log.debug(result)
+            return result
 
     @classmethod
     def getInstance(cls):

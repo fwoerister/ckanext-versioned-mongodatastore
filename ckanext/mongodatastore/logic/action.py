@@ -10,6 +10,8 @@ log = logging.getLogger(__name__)
 
 
 def querystore_resolve(context, data_dict):
+    log.debug('QUERYSTORE RESOLVE ----------------------------------------------------------------------------')
+
     cntr = MongoDbController.getInstance()
 
     pid = data_dict.get('pid')
@@ -25,8 +27,7 @@ def querystore_resolve(context, data_dict):
 
     log.debug('querystore_resolve parameters {0}'.format([pid, skip, limit, records_format]))
 
-    result = cntr.retrieve_stored_query(pid, offset=skip, limit=limit, check_integrity=False,
-                                        records_format=records_format)
+    result = cntr.retrieve_stored_query(pid, offset=skip, limit=limit, records_format=records_format)
 
     log.debug('querystore_resolve result: {0}'.format(result))
 
