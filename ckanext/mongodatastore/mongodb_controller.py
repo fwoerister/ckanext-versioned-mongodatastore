@@ -225,7 +225,7 @@ class MongoDbController:
                                 records_format='objects'):
 
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
-            timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
+            timestamp = self.__get_max_id(resource_id)
 
             if sort is None:
                 sort = [{'id': 1}]
