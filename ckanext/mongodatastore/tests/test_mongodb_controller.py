@@ -233,6 +233,8 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.delete_resource(new_resource_id, {u'id': 1})
 
+        sleep(4)
+
         new_result = mongo_cntr.query_current_state(new_resource_id, {},
                                                     {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                     None, None, None, False, True)
