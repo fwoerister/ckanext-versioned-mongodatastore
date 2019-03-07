@@ -85,7 +85,7 @@ class MongoDbController:
 
         def __get_max_id(self, resource_id):
             col, _ = self.__get_collections(resource_id)
-            return col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}])[0]['max_id']
+            return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
 
         def get_all_ids(self):
             return [name for name in self.datastore.list_collection_names() if not name.endswith('_meta')]
