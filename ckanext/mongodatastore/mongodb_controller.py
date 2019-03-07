@@ -83,6 +83,10 @@ class MongoDbController:
             col, _ = self.__get_collections(resource_id)
             return col.count() == 0
 
+        def __get_max_id(self, resource_id):
+            col, _ = self.__get_collections(resource_id)
+            return col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}])[0]['max_id']
+
         def get_all_ids(self):
             return [name for name in self.datastore.list_collection_names() if not name.endswith('_meta')]
 
@@ -116,7 +120,7 @@ class MongoDbController:
             col, meta = self.__get_collections(resource_id)
 
             # TODO: This is a workaround, as utcnow() does not set the correct timezone!
-            timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
+            timestamp = self.__get_max_id(resource_id)
 
             pipeline = [{'$match': {}}]
 
@@ -334,78 +338,6 @@ class MongoDbController:
                 result['offset'] = offset
 
             return result
-
-        # def __query(self, resource_id, pipeline, offset, limit, include_total, check_integrity=False):
-        #     col, meta = self.__get_collections(resource_id)
-        #
-        #     print(pipeline)
-        #     resultset_hash = calculate_hash(col.aggregate(pipeline))
-        #
-        #     if check_integrity:
-        #         return resultset_hash
-        #
-        #     if include_total:
-        #         count = list(col.aggregate(pipeline + [{'$count': 'count'}]))
-        #
-        #         if len(count) == 0:
-        #             count = 0
-        #         else:
-        #             count = count[0]['count']
-        #
-        #     query = helper.JSONEncoder().encode(pipeline)
-        #     # the timestamps have to be removed, otherwise the querystore would detected a new query every time,
-        #     # as the timestamps within the query change the hash all the time
-        #     query_with_removed_ts = helper.JSONEncoder().encode(pipeline[1:])
-        #
-        #     if offset and offset > 0:
-        #         pipeline.append({'$skip': offset})
-        #
-        #     if limit:
-        #         if 0 < limit <= self.rows_max:
-        #             pipeline.append({'$limit': limit})
-        #         if limit < self.rows_max:
-        #             pipeline.append({'$limit': self.rows_max})
-        #             limit = self.rows_max
-        #
-        #     log.debug('final pipeline: {0}'.format(pipeline))
-        #     log.debug('limit: {0}'.format(limit))
-        #     log.debug('rows_max: {0}'.format(self.rows_max))
-        #
-        #     log.debug('offset: {0}'.format(offset))
-        #     result = col.aggregate(pipeline)
-        #
-        #     projection = [stage['$project'] for stage in pipeline if '$project' in stage.keys()]
-        #     assert (len(projection) <= 1)
-        #     if len(projection) == 1:
-        #         projection = projection[0]
-        #         projection = [field for field in projection if projection[field] == 1]
-        #
-        #         schema = self.resource_fields(resource_id)['schema']
-        #         fields = []
-        #         for field in schema.keys():
-        #             if field in projection:
-        #                 fields.append({'id': field, 'type': schema[field]})
-        #     else:
-        #         fields = []
-        #
-        #     query_hash = calculate_hash(query_with_removed_ts)
-        #
-        #     result = {'records': result,
-        #               'fields': fields,
-        #               'records_hash': resultset_hash,
-        #               'query': query,
-        #               'query_with_removed_ts': query_with_removed_ts,
-        #               'query_hash': query_hash}
-        #
-        #     if include_total:
-        #         result['total'] = count
-        #
-        #     if limit:
-        #         result['limit'] = limit
-        #     if offset:
-        #         result['offset'] = offset
-        #
-        #     return result
 
         def resource_fields(self, resource_id):
             col, meta = self.__get_collections(resource_id)
