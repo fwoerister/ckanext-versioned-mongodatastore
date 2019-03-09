@@ -134,13 +134,7 @@ class MongoDbController:
                 for field in override_fields:
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
-
-                        print('new value for file {0} is {1}'.format(field['id'], record[field['id']]))
-
                     except ValueError:
-                        print('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
-                                                                                                 record[record_id],
-                                                                                                 resource_id))
                         log.warn('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                     record[record_id],
                                                                                                     resource_id))

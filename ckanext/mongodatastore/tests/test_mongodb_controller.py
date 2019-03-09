@@ -154,7 +154,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         new_records = [
             {'id': 1, 'field1': 'abc', 'field2': 123},
-            {'id': 2, 'field1': 'abc', 'field2': 456}
+            {'id': 2, 'field1': '123', 'field2': 456}
         ]
 
         mongo_cntr.create_resource(new_resource_id, primary_key)
@@ -167,8 +167,12 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
 
-        self.assertRaises(ValueError, mongo_cntr.update_datatypes, new_resource_id,
-                          [{'id': 'field1', 'info': {'type_override': 'number'}}])
+        mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
+
+        result = mongo_cntr.query_current_state(new_resource_id, {}, None, None, 0, 0, False, True)
+
+        self.assertEqual(type(result['records'][0]['field1']), str)
+        self.assertEqual(type(result['records'][1]['field1']), int)
 
     def test_upsert(self):
         mongo_cntr = MongoDbController.getInstance()
