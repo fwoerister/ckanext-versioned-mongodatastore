@@ -333,7 +333,7 @@ class MongoDbController:
             if len(result) > 0:
                 result = result[0]
                 for key in sorted(result['keys']):
-                    if key not in ['_id', 'valid_to', 'id']:
+                    if key not in ['_id', 'valid_to', 'id', '_deleted']:
                         schema[key] = 'string'  # TODO: guess data type
                     if key == 'id':
                         schema['id'] = 'number'
