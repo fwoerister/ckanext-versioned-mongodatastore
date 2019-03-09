@@ -338,29 +338,31 @@ class MongoDbController:
         def resource_fields(self, resource_id, timestamp=None):
             col, meta = self.__get_collections(resource_id)
 
-            pipeline = [
-                {'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}},
-                {'$unwind': '$arrayofkeyvalue'},
-                {'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}}
-            ]
+            pipeline = []
 
             if timestamp:
                 pipeline = [
-                               {'$match': {'_id': {'$lte': timestamp}}}
-                           ] + pipeline
+                    {'$match': {'_id': {'$lte': timestamp}}}
+                ]
+            pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
+            pipeline.append({'$unwind': '$arrayofkeyvalue'})
+            pipeline.append({'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}})
 
             result = col.aggregate(pipeline)
 
-            # result = col.map_reduce(mapper, reducer, "{0}_keys".format(resource_id))
             schema = OrderedDict()
 
-            result = list(result)[0]
+            result = list(result)
 
-            for key in sorted(result['keys']):
-                if key not in ['_id', 'valid_to', 'id']:
-                    schema[key] = 'string'  # TODO: guess data type
-                if key == 'id':
-                    schema['id'] = 'number'
+            if len(result) > 0:
+                result = result[0]
+                for key in sorted(result['keys']):
+                    if key not in ['_id', 'valid_to', 'id']:
+                        schema[key] = 'string'  # TODO: guess data type
+                    if key == 'id':
+                        schema['id'] = 'number'
+            else:
+                schema['id'] = 'number'
 
             result = {u'schema': schema, u'meta': meta.find_one()}
 
