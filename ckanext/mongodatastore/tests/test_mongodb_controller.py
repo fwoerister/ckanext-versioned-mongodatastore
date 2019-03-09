@@ -274,6 +274,7 @@ class MongoDbControllerTest(unittest.TestCase):
                                                     None, None, None, False, True)
 
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
+        history_result_csv = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, 'csv')
 
         self.assertEqual(result[u'records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
                                               {u'id': 2, u'field1': u'def', u'field2': 456},
@@ -286,3 +287,5 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertEqual(history_result[u'records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
                                                       {u'id': 2, u'field1': u'def', u'field2': 456},
                                                       {u'id': 3, u'field1': u'ghi', u'field2': 456}])
+
+        self.assertEqual(history_result_csv[u'records'], "1;abc;123\r\n2;def;456\r\n3;ghi;456\r\n")
