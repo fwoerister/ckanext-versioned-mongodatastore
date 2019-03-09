@@ -237,7 +237,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(self.RESOURCE_ID,
                           copy.deepcopy(self.DATA_RECORD) + [
-                              {'field2': 'abc', 'field1': 123, 'distinct_field': 1, 'id': 0}], False)
+                              {'field2': 123, 'field1': 'abc', 'distinct_field': 1, 'id': 0}], False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                 {'_id': 0},

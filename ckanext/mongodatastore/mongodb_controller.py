@@ -217,13 +217,17 @@ class MongoDbController:
 
             if distinct:
                 group_expr = {'$group': {'_id': {}}}
+                sort_dict = OrderedDict()
                 for field in projection.keys():
                     if field != '_id':
                         group_expr['$group']['_id'][field] = '${0}'.format(field)
                         group_expr['$group'][field] = {'$first': '${0}'.format(field)}
+                        sort_dict[field] = 1
+                sort_dict['id'] = 1
 
                 log.debug('$group stage: {0}'.format(group_expr))
                 pipeline.append(group_expr)
+                pipeline.append({'$sort': sort_dict})
 
             if projection:
                 log.debug('projection: {0}'.format(projection))
