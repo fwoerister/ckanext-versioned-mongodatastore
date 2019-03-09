@@ -146,7 +146,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
 
-    def test_update_datatypes_with_type_error(self):
+    def test_update_datatypes_with_value_error(self):
         mongo_cntr = MongoDbController.getInstance()
 
         new_resource_id = 'new_resource'
@@ -167,7 +167,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
 
-        self.assertRaises(TypeError, mongo_cntr.update_datatypes, new_resource_id,
+        self.assertRaises(ValueError, mongo_cntr.update_datatypes, new_resource_id,
                           [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
     def test_upsert(self):

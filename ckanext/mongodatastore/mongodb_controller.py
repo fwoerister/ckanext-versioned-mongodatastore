@@ -130,19 +130,14 @@ class MongoDbController:
 
             override_fields = [{'id': field['id'], 'new_type': field['info']['type_override']} for field in fields if
                                len(field['info']['type_override']) > 0]
-
-            print("{0} fields are modified")
-            print(override_fields)
-
             for record in result['records']:
                 for field in override_fields:
-                    print('{0} - {1}'.format(record['id'], field))
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
 
                         print('new value for file {0} is {1}'.format(field['id'], record[field['id']]))
 
-                    except TypeError:
+                    except ValueError:
                         print('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                  record[record_id],
                                                                                                  resource_id))
@@ -150,7 +145,6 @@ class MongoDbController:
                                                                                                     record[record_id],
                                                                                                     resource_id))
                 record.pop('_id')
-                print('upsert document: {0}'.format(record))
                 self.upsert(resource_id, [record], False)
             # TODO: store override information in meta entry
 
