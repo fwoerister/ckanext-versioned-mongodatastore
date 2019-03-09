@@ -1,4 +1,5 @@
 import unittest
+import copy
 
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, \
@@ -36,7 +37,7 @@ class MongoDbControllerTest(unittest.TestCase):
     # helper function tests
 
     def test_convert_to_csv(self):
-        result = str(convert_to_csv(self.DATA_RECORD, self.DATA_RECORD_KEYS))
+        result = str(convert_to_csv(copy.deepcopy(self.DATA_RECORD), self.DATA_RECORD_KEYS))
         self.assertEqual(result, self.DATA_RECORD_CSV)
 
     # static function tests
@@ -93,7 +94,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
         col = mongo_cntr.datastore.get_collection(self.RESOURCE_ID)
         self.assertNotEqual(col.count_documents({}), 0)
@@ -115,7 +116,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
         fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
@@ -134,7 +135,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
         fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
@@ -154,12 +155,12 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 None, None, None, None, False)
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD_UPDATE), False)
 
         updated_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
@@ -182,8 +183,9 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:], False)
-        self.assertRaises(MongoDbControllerException, mongo_cntr.upsert, self.RESOURCE_ID, self.DATA_RECORD_INVALID_UPDATE, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
+        self.assertRaises(MongoDbControllerException, mongo_cntr.upsert, self.RESOURCE_ID,
+                          self.DATA_RECORD_INVALID_UPDATE, False)
 
     def test_retrieve_stored_query(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -192,12 +194,12 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                 None, None, None, False, True)
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE[:], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD_UPDATE), False)
 
         mongo_cntr.delete_resource(self.RESOURCE_ID, {u'id': 1})
 
@@ -229,7 +231,8 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD[:] + [{'field1': 'abc', 'field2': 123, 'id': 0}], False)
+        mongo_cntr.upsert(self.RESOURCE_ID,
+                          copy.deepcopy(self.DATA_RECORD) + [{'field1': 'abc', 'field2': 123, 'id': 0}], False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                 {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
