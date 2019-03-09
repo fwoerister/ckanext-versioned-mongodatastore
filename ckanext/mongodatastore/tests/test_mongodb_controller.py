@@ -1,13 +1,12 @@
 import unittest
 from datetime import datetime
+from time import sleep
 
 import pytz
 from bson import ObjectId
 
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, convert_to_object_id
-
-from time import sleep
 
 TEST_RESULT_SET = [
     {'id': 1, 'name': 'Florian', 'age': 12},
@@ -137,8 +136,6 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
         mongo_cntr.upsert(new_resource_id, new_records, False)
-
-        sleep(1)
 
         fields = mongo_cntr.resource_fields(new_resource_id)
 
