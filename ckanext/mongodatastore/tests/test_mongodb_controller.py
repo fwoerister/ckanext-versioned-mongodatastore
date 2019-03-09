@@ -4,27 +4,6 @@ from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, \
     MongoDbControllerException, QueryNotFoundException
 
-PRIMARY_KEY = 'id'
-RESOURCE_ID = 'test_resource_id'
-
-DATA_RECORD = [
-    {u'id': 1, u'field1': u'abc', u'field2': 123},
-    {u'id': 2, u'field1': u'def', u'field2': 456},
-    {u'id': 3, u'field1': u'ghi', u'field2': 456}
-]
-
-DATA_RECORD_KEYS = ['field1', 'field2', 'id']
-DATA_RECORD_CSV = "abc;123;1\r\ndef;456;2\r\nghi;456;3\r\n"
-
-DATA_RECORD_UPDATE = [
-    {u'id': 3, u'field1': u'new_value', u'field2': 321},
-    {u'id': 4, u'field1': u'jkl', u'field2': 432}
-]
-
-DATA_RECORD_INVALID_UPDATE = [
-    {u'field1': u'abc', u'field2': u'abc'}
-]
-
 
 class MongoDbControllerTest(unittest.TestCase):
 
@@ -33,11 +12,32 @@ class MongoDbControllerTest(unittest.TestCase):
         instance.client.drop_database(CKAN_DATASTORE)
         instance.datastore = instance.client.get_database(CKAN_DATASTORE)
 
+        self.PRIMARY_KEY = 'id'
+        self.RESOURCE_ID = 'test_resource_id'
+
+        self.DATA_RECORD = [
+            {u'id': 1, u'field1': u'abc', u'field2': 123},
+            {u'id': 2, u'field1': u'def', u'field2': 456},
+            {u'id': 3, u'field1': u'ghi', u'field2': 456}
+        ]
+
+        self.DATA_RECORD_KEYS = ['field1', 'field2', 'id']
+        self.DATA_RECORD_CSV = "abc;123;1\r\ndef;456;2\r\nghi;456;3\r\n"
+
+        self.DATA_RECORD_UPDATE = [
+            {u'id': 3, u'field1': u'new_value', u'field2': 321},
+            {u'id': 4, u'field1': u'jkl', u'field2': 432}
+        ]
+
+        self.DATA_RECORD_INVALID_UPDATE = [
+            {u'field1': u'abc', u'field2': u'abc'}
+        ]
+
     # helper function tests
 
     def test_convert_to_csv(self):
-        result = str(convert_to_csv(DATA_RECORD, DATA_RECORD_KEYS))
-        self.assertEqual(result, DATA_RECORD_CSV)
+        result = str(convert_to_csv(self.DATA_RECORD, self.DATA_RECORD_KEYS))
+        self.assertEqual(result, self.DATA_RECORD_CSV)
 
     # static function tests
 
@@ -65,84 +65,84 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_create_resource(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
         all_ids = mongo_cntr.get_all_ids()
 
-        self.assertIn(RESOURCE_ID, all_ids)
-        self.assertIn('{0}_meta'.format(RESOURCE_ID), mongo_cntr.datastore.list_collection_names())
+        self.assertIn(self.RESOURCE_ID, all_ids)
+        self.assertIn('{0}_meta'.format(self.RESOURCE_ID), mongo_cntr.datastore.list_collection_names())
 
     def test_empty_resource(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.delete_resource(RESOURCE_ID, None)
+        mongo_cntr.delete_resource(self.RESOURCE_ID, None)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.delete_resource(RESOURCE_ID, None, force=True)
+        mongo_cntr.delete_resource(self.RESOURCE_ID, None, force=True)
 
-        self.assertFalse(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertFalse(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
     def test_resource_with_records(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
 
-        col = mongo_cntr.datastore.get_collection(RESOURCE_ID)
+        col = mongo_cntr.datastore.get_collection(self.RESOURCE_ID)
         self.assertNotEqual(col.count_documents({}), 0)
 
-        mongo_cntr.delete_resource(RESOURCE_ID, None)
+        mongo_cntr.delete_resource(self.RESOURCE_ID, None)
 
         self.assertEqual(col.count_documents({}), 6)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.delete_resource(RESOURCE_ID, None, force=True)
+        mongo_cntr.delete_resource(self.RESOURCE_ID, None, force=True)
 
-        self.assertFalse(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertFalse(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
     def test_update_datatypes(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
 
-        fields = mongo_cntr.resource_fields(RESOURCE_ID)
+        fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
-        self.assertEqual(fields['schema'].keys(), DATA_RECORD_KEYS)
+        self.assertEqual(fields['schema'].keys(), self.DATA_RECORD_KEYS)
 
-        mongo_cntr.update_datatypes(RESOURCE_ID, [{'id': 'field1', 'info': {'type_override': 'number'}}])
+        mongo_cntr.update_datatypes(self.RESOURCE_ID, [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
-        fields = mongo_cntr.resource_fields(RESOURCE_ID)
+        fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
 
     def test_update_datatypes_with_value_error(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
 
-        fields = mongo_cntr.resource_fields(RESOURCE_ID)
+        fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
 
-        mongo_cntr.update_datatypes(RESOURCE_ID, [{'id': 'field1', 'info': {'type_override': 'number'}}])
+        mongo_cntr.update_datatypes(self.RESOURCE_ID, [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
-        result = mongo_cntr.query_current_state(RESOURCE_ID, {}, None, None, 0, 0, False, True)
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, None, None, 0, 0, False, True)
 
         self.assertEqual(type(result['records'][0]['field1']), unicode)
         self.assertEqual(type(result['records'][1]['field1']), float)
@@ -150,18 +150,18 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_upsert(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
 
-        result = mongo_cntr.query_current_state(RESOURCE_ID, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 None, None, None, None, False)
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD_UPDATE, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE, False)
 
-        updated_result = mongo_cntr.query_current_state(RESOURCE_ID, {},
+        updated_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                         None, None, None, None, False)
 
@@ -178,45 +178,45 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_upsert_records_with_no_id(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
-        self.assertRaises(MongoDbControllerException, mongo_cntr.upsert, RESOURCE_ID, DATA_RECORD_INVALID_UPDATE, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
+        self.assertRaises(MongoDbControllerException, mongo_cntr.upsert, self.RESOURCE_ID, self.DATA_RECORD_INVALID_UPDATE, False)
 
     def test_retrieve_stored_query(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
 
-        result = mongo_cntr.query_current_state(RESOURCE_ID, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                 None, None, None, False, True)
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD_UPDATE, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE, False)
 
-        mongo_cntr.delete_resource(RESOURCE_ID, {u'id': 1})
+        mongo_cntr.delete_resource(self.RESOURCE_ID, {u'id': 1})
 
-        new_result = mongo_cntr.query_current_state(RESOURCE_ID, {},
+        new_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                     {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
                                                     None, None, None, False, True)
 
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
         history_result_csv = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, 'csv')
 
-        self.assertEqual(result[u'records'], DATA_RECORD)
+        self.assertEqual(result[u'records'], self.DATA_RECORD)
 
         self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456},
                                                   {u'id': 3, u'field1': u'new_value', u'field2': 321},
                                                   {u'id': 4, u'field1': u'jkl', u'field2': 432}])
 
-        self.assertEqual(history_result[u'records'], DATA_RECORD)
+        self.assertEqual(history_result[u'records'], self.DATA_RECORD)
 
-        self.assertEqual(history_result_csv[u'records'], DATA_RECORD_CSV)
+        self.assertEqual(history_result_csv[u'records'], self.DATA_RECORD_CSV)
 
     def test_retrieve_nonexisting_pid(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -225,13 +225,13 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_query_current_state_with_sorting(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD + [{'field1': 'abc', 'field2': 123, 'id': 0}], False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD + [{'field1': 'abc', 'field2': 123, 'id': 0}], False)
 
-        result = mongo_cntr.query_current_state(RESOURCE_ID, {},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                 {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 [{'field1': 1}], None, None,
                                                 False, True)
@@ -241,4 +241,4 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertTrue('pid' in result.keys())
         self.assertIsNotNone(result['pid'])
 
-        self.assertEqual(result['records'], [{'field1': 'abc', 'field2': 123, 'id': 0}] + DATA_RECORD)
+        self.assertEqual(result['records'], [{'field1': 'abc', 'field2': 123, 'id': 0}] + self.DATA_RECORD)
