@@ -158,13 +158,13 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
-        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0},
                                                 None, None, None, None, False)
 
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD_UPDATE), False)
 
         updated_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
-                                                        {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+                                                        {'_id': 0},
                                                         None, None, None, None, False)
 
         self.assertEqual(len(result['records']), 3)
@@ -197,7 +197,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
-        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0},
                                                 None, None, None, False, True)
 
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD_UPDATE), False)
@@ -205,7 +205,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr.delete_resource(self.RESOURCE_ID, {u'id': 1})
 
         new_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
-                                                    {u'_id': 0, u'id': 1, u'field1': 1, u'field2': 1},
+                                                    {u'_id': 0},
                                                     None, None, None, False, True)
 
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
@@ -251,7 +251,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
-        mongo_cntr.upsert(self.RESOURCe_ID, self.DATA_RECORD_UPDATE, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE, False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'distinct_value': 1},
                                                 None, 0, 0, True, True)
