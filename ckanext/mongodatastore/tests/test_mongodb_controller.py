@@ -5,7 +5,8 @@ import pytz
 from bson import ObjectId
 
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
-from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, convert_to_object_id
+from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, convert_to_object_id, \
+    MongoDbControllerException
 
 TEST_RESULT_SET = [
     {'id': 1, 'name': 'Florian', 'age': 12},
@@ -214,6 +215,29 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertEqual(updated_result['records'][0], {'id': 1, 'field1': 'abc', 'field2': 123})
         self.assertEqual(updated_result['records'][1], {'id': 2, 'field1': 'new_value', 'field2': 1})
         self.assertEqual(updated_result['records'][2], {'id': 3, 'field1': 'ghi', 'field2': 1})
+
+    def test_upsert_records_with_no_id(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        new_resource_id = 'new_resource'
+        primary_key = 'id'
+
+        new_records = [
+            {'id': 1, 'field1': 'abc', 'field2': 123},
+            {'id': 2, 'field1': 'def', 'field2': 456}
+        ]
+
+        updated_records = [
+            {'field1': 'new_value', 'field2': 1},
+            {'field1': 'ghi', 'field2': 1}
+        ]
+
+        mongo_cntr.create_resource(new_resource_id, primary_key)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.upsert(new_resource_id, new_records, False)
+        self.assertRaises(MongoDbControllerException, mongo_cntr.upsert, new_resource_id, updated_records, False)
 
     def test_retrieve_stored_query(self):
         mongo_cntr = MongoDbController.getInstance()

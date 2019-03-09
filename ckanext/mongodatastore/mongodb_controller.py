@@ -151,7 +151,7 @@ class MongoDbController:
             records_without_id = [record for record in records if record_id_key not in record.keys()]
 
             if len(records_without_id) > 0:
-                raise MongoDbControllerException('For a datastore upsert, every an id '
+                raise MongoDbControllerException('For a datastore upsert, an id '
                                                  'value has to be set for every record. '
                                                  'In this collection the id attribute is "{0}"'.format(record_id_key))
 
