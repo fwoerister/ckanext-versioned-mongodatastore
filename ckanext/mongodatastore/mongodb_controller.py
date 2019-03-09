@@ -270,7 +270,10 @@ class MongoDbController:
                 {'$group': self.__generate_history_group_expression(resource_id, timestamp)},
 
                 # remove documents, that have already been deleted
-                {'$match': {'_deleted': {'$not': {'$eq': True}}}}
+                {'$match': {'_deleted': {'$not': {'$eq': True}}}},
+
+                # remove history related attributes
+                {'$project': {'_id': 0, '_deleted': 0}}
             ]
 
             pagination_stage = []

@@ -245,7 +245,7 @@ class MongoDbControllerTest(unittest.TestCase):
                               {'field2': 123, 'field1': 'abc', 'distinct_field': 1, 'id': 0}], False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
-                                                {'_id': 0},
+                                                {},
                                                 [{'field1': 1}], None, None,
                                                 False, True)
 
