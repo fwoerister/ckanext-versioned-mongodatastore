@@ -288,4 +288,4 @@ class MongoDbControllerTest(unittest.TestCase):
                                                       {u'id': 2, u'field1': u'def', u'field2': 456},
                                                       {u'id': 3, u'field1': u'ghi', u'field2': 456}])
 
-        self.assertEqual(history_result_csv[u'records'], "1;abc;123\r\n2;def;456\r\n3;ghi;456\r\n")
+        self.assertEqual(history_result_csv[u'records'], "abc;123;1\r\ndef;456;2\r\nghi;456;3\r\n")
