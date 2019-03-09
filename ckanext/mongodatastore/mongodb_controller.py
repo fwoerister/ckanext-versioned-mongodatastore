@@ -339,7 +339,6 @@ class MongoDbController:
             col, meta = self.__get_collections(resource_id)
 
             pipeline = [
-                {'$match': {'valid_to': {'$exists': 0}}},
                 {'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}},
                 {'$unwind': '$arrayofkeyvalue'},
                 {'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}}
