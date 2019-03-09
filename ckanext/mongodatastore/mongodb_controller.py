@@ -6,10 +6,11 @@ from collections import OrderedDict
 from datetime import datetime
 
 import pytz
-from bson.code import Code
+from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
 
+from ckanext.mongodatastore import helper
 from ckanext.mongodatastore.helper import normalize_json, CKAN_DATASTORE, calculate_hash, HASH_ALGORITHM
 from ckanext.mongodatastore.query_store import QueryStore
 
@@ -41,9 +42,10 @@ def convert_to_csv(result_set, fields):
     return returnval
 
 
-def convert_to_unix_timestamp(datetime_value):
+def convert_to_object_id(datetime_value):
     epoch = datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
-    return (datetime_value - epoch).total_seconds()
+    hex_timestamp = hex(int((datetime_value - epoch).total_seconds()))[2:]
+    return ObjectId(hex_timestamp + '0000000000000000')
 
 
 # TODO: implement session handling + rollbacks in case of failed transactions
@@ -65,9 +67,22 @@ class MongoDbController:
             meta = self.datastore.get_collection('{0}_meta'.format(resource_id))
             return col, meta
 
-        def __is_empty(self, resource_id):
+        def __get_max_id(self, resource_id):
             col, _ = self.__get_collections(resource_id)
-            return col.count() == 0
+            return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
+
+        def __generate_history_group_expression(self, resource_id, timestamp):
+            expression = OrderedDict()
+            expression['_id'] = '$id'
+
+            fields = self.resource_fields(resource_id, timestamp)
+            fields = fields['schema']
+
+            for key in fields:
+                if key not in ['_id']:
+                    expression[key] = {'$last': '${0}'.format(key)}
+
+            return expression
 
         def get_all_ids(self):
             return [name for name in self.datastore.list_collection_names() if not name.endswith('_meta')]
@@ -83,37 +98,25 @@ class MongoDbController:
             log.debug('record entry added')
             self.datastore.get_collection('{0}_meta'.format(resource_id)).insert_one({'record_id': primary_key})
 
-        def delete_resource(self, resource_id, filters, force=False):
+        def delete_resource(self, resource_id, filters={}, force=False):
             if force:
                 self.client.get_database(CKAN_DATASTORE).drop_collection(resource_id)
             else:
                 col = self.client.get_database(CKAN_DATASTORE).get_collection(resource_id)
-                timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
 
-                if filters:
-                    for record in col.find({'$and': [{'valid_to': {'$exists': 0}}, filters]}):
-                        col.update_one({'_id': record['_id']}, {'$set': {'valid_to': timestamp}})
-                else:
-                    for record in col.find({'valid_to': {'$exists': 0}}):
-                        col.update_one({'_id': record['_id']}, {'$set': {'valid_to': timestamp}})
+                ids_to_delete = col.find(filters, {'_id': 0, 'id': 1})
+
+                for id_to_delete in ids_to_delete:
+                    col.insert_one({'id': id_to_delete['id'], '_deleted': True})
 
         def update_datatypes(self, resource_id, fields):
             col, meta = self.__get_collections(resource_id)
 
-            # TODO: This is a workaround, as utcnow() does not set the correct timezone!
-            timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
-            timestamp = int(timestamp)
+            timestamp = self.__get_max_id(resource_id)
 
-            pipeline = [{'$match': {'valid_from': {'$lt': timestamp}}}, {'$match': {'$or': [
-                {'valid_to': {'$exists': 0}},
-                {'valid_to': {'$gt': timestamp}}
-            ]}}]
+            pipeline = [{'$match': {}}]
 
-            result = self.__query(resource_id, pipeline, 0, 0, False)
-
-            print(result)
-
-            # print("{0} documents are updated".format(len(list(result['records']))))
+            result = self.__query(resource_id, pipeline, timestamp, None, None, False)
 
             meta_record = meta.find_one()
             record_id = meta_record['record_id']
@@ -127,27 +130,15 @@ class MongoDbController:
 
             override_fields = [{'id': field['id'], 'new_type': field['info']['type_override']} for field in fields if
                                len(field['info']['type_override']) > 0]
-
-            print("{0} fields are modified")
-            print(override_fields)
-
             for record in result['records']:
                 for field in override_fields:
-                    print('{0} - {1}'.format(record['id'], field))
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
-
-                        print('new value for file {0} is {1}'.format(field['id'], record[field['id']]))
-
-                    except TypeError:
-                        print('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
-                                                                                                 record[record_id],
-                                                                                                 resource_id))
+                    except ValueError:
                         log.warn('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                     record[record_id],
                                                                                                     resource_id))
                 record.pop('_id')
-                print('upsert document: {0}'.format(record))
                 self.upsert(resource_id, [record], False)
             # TODO: store override information in meta entry
 
@@ -165,31 +156,10 @@ class MongoDbController:
                                                  'In this collection the id attribute is "{0}"'.format(record_id_key))
 
             for record in records:
-                # TODO first update the valid_to field of the old record with { '$toInt': '$currentDate' },
-                #  then insert new record
-
                 if not dry_run:
-                    result = col.insert_one(record)
+                    col.insert_one(record)
 
-                prev_record = col.find_one({'$and': [{record_id_key: record[record_id_key]},
-                                                     {'valid_to': {'$exists': 0}},
-                                                     {'valid_from': {'$exists': 1}}]})
-
-                if prev_record:
-                    if not dry_run:
-                        col.update_one({'_id': prev_record['_id']},
-                                       {'$set': {
-                                           'valid_to': convert_to_unix_timestamp(
-                                               result.inserted_id.generation_time)}},
-                                       )
-
-                if not dry_run:
-                    col.update_one({'_id': result.inserted_id},
-                                   {'$set': {
-                                       'valid_from': convert_to_unix_timestamp(
-                                           result.inserted_id.generation_time)}})
-
-        def retrieve_stored_query(self, pid, offset, limit, check_integrity=False, records_format='objects'):
+        def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)
 
             if q:
@@ -197,43 +167,47 @@ class MongoDbController:
 
                 result = self.__query(q.resource_id,
                                       pipeline,
+                                      ObjectId(q.timestamp),
                                       offset,
                                       limit,
-                                      check_integrity)
-
-                if check_integrity:
-                    return result == q.result_set_hash
+                                      True)
 
                 result['pid'] = pid
                 result['query'] = q
 
-                if records_format == 'csv':
-                    query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
-                    projection = query[-1]['$project']
-                    fields = [field for field in projection if projection[field] == 1]
+                query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
+                projection = [projection for projection in query if '$project' in projection.keys()][0]['$project']
+                fields = [field for field in projection if projection[field] == 1]
 
+                if records_format == 'csv':
                     result['records'] = convert_to_csv(result['records'], fields)
                 else:
                     result['records'] = list(result['records'])
+
+                schema = self.resource_fields(q.resource_id, q.timestamp)['schema']
+                schema_fields = []
+                for field in schema.keys():
+                    log.debug(field)
+                    if not projection or field in projection:
+                        schema_fields.append({'id': field, 'type': schema[field]})
+
+                result['fields'] = schema_fields
+
+                log.debug('schema fields {0}'.format(schema_fields))
 
                 return result
             else:
                 raise QueryNotFoundException('Unfortunately there is no query stored with PID {0}'.format(pid))
 
         def query_current_state(self, resource_id, statement, projection, sort, offset, limit, distinct, include_total,
-                                records_format='objects', check_integrity=False):
+                                records_format='objects'):
 
-            # TODO: This is a workaround, as utcnow() does not set the correct timezone!
-            timestamp = convert_to_unix_timestamp(datetime.utcnow().replace(tzinfo=pytz.UTC))
-            timestamp = int(timestamp)
+            timestamp = self.__get_max_id(resource_id)
 
             if sort is None:
                 sort = [{'id': 1}]
             else:
                 sort = sort + [{'id': 1}]
-
-            projection = normalize_json(projection)
-            statement = normalize_json(statement)
 
             sort_dict = OrderedDict()
             for sort_entry in sort:
@@ -244,10 +218,10 @@ class MongoDbController:
             if projection:
                 projection = normalize_json(projection)
 
-            pipeline = [{'$match': {'valid_from': {'$lt': timestamp}}}, {'$match': {'$or': [
-                {'valid_to': {'$exists': 0}},
-                {'valid_to': {'$gt': timestamp}}
-            ]}}, {'$match': statement}, {'$sort': sort_dict}]
+            pipeline = [
+                {'$match': statement},
+                {'$sort': sort_dict}
+            ]
 
             if distinct:
                 group_expr = {'$group': {'_id': {}}}
@@ -255,6 +229,7 @@ class MongoDbController:
                     if field != '_id':
                         group_expr['$group']['_id'][field] = '${0}'.format(field)
                         group_expr['$group'][field] = {'$first': '${0}'.format(field)}
+
                 log.debug('$group stage: {0}'.format(group_expr))
                 pipeline.append(group_expr)
 
@@ -262,13 +237,21 @@ class MongoDbController:
                 log.debug('projection: {0}'.format(projection))
                 pipeline.append({'$project': projection})
 
-            result = self.__query(resource_id, pipeline, offset, limit, include_total, check_integrity)
+            result = self.__query(resource_id, pipeline, timestamp, offset, limit, include_total)
 
-            pid = self.querystore.store_query(resource_id, result['query'], result['query_with_removed_ts'], timestamp,
-                                              result['records_hash'], result[
-                                                  'query_hash'], HASH_ALGORITHM().name)
+            pid = self.querystore.store_query(resource_id, result['query'], str(timestamp),
+                                              result['records_hash'], result['query_hash'], HASH_ALGORITHM().name)
 
             result['pid'] = pid
+
+            schema = self.resource_fields(resource_id, timestamp)['schema']
+            schema_fields = []
+            for field in schema.keys():
+                log.debug(field)
+                if not projection or field in projection:
+                    schema_fields.append({'id': field, 'type': schema[field]})
+
+            result['fields'] = schema_fields
 
             if records_format == 'objects':
                 result['records'] = list(result['records'])
@@ -279,74 +262,51 @@ class MongoDbController:
 
             return result
 
-        def __query(self, resource_id, pipeline, offset, limit, include_total, check_integrity=False):
+        def __query(self, resource_id, pipeline, timestamp, offset, limit, include_total):
             col, meta = self.__get_collections(resource_id)
 
-            resultset_hash = calculate_hash(col.aggregate(pipeline))
+            history_stage = [
+                # remove documents, that were created after the timestamp
+                {'$match': {'_id': {'$lte': timestamp}}},
 
-            if check_integrity:
-                return resultset_hash
+                # get the latest versions of each id
+                {'$group': self.__generate_history_group_expression(resource_id, timestamp)},
+
+                # remove documents, that have already been deleted
+                {'$match': {'_deleted': {'$not': {'$eq': True}}}}
+            ]
+
+            pagination_stage = []
+
+            if offset and offset > 0:
+                pagination_stage.append({'$skip': offset})
+
+            if limit:
+                if 0 < limit <= self.rows_max:
+                    pagination_stage.append({'$limit': limit})
+                if limit < self.rows_max:
+                    pipeline.append({'$limit': self.rows_max})
+                    limit = self.rows_max
+
+            resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline))
 
             if include_total:
-                count = list(col.aggregate(pipeline + [{'$count': 'count'}]))
+                count = list(col.aggregate(history_stage + pipeline + [{u'$count': u'count'}]))
 
                 if len(count) == 0:
                     count = 0
                 else:
                     count = count[0]['count']
 
-            query = json.JSONEncoder().encode(pipeline)
+            query = helper.JSONEncoder().encode(pipeline)
 
-            ts_from = pipeline[0]['$match']['valid_from']['$lt']
-            ts_to = pipeline[1]['$match']['$or'][1]['valid_to']['$gt']
+            records = col.aggregate(history_stage + pipeline + pagination_stage)
 
-            # the timestamps have to be removed, otherwise the querystore would detected a new query every time,
-            # as the timestamps within the query change the hash all the time
-            pipeline[0]['$match']['valid_from']['$lt'] = 0
-            pipeline[1]['$match']['$or'][1]['valid_to']['$gt'] = 0
-            query_with_removed_ts = json.JSONEncoder().encode(pipeline)
+            query_hash = calculate_hash(query)
 
-            pipeline[0]['$match']['valid_from']['$lt'] = ts_from
-            pipeline[1]['$match']['$or'][1]['valid_to']['$gt'] = ts_to
-
-            if offset and offset > 0:
-                pipeline.append({'$skip': offset})
-
-            if limit:
-                if 0 < limit <= self.rows_max:
-                    pipeline.append({'$limit': limit})
-                if limit < self.rows_max:
-                    pipeline.append({'$limit': self.rows_max})
-                    limit = self.rows_max
-
-            log.debug('final pipeline: {0}'.format(pipeline))
-            log.debug('limit: {0}'.format(limit))
-            log.debug('rows_max: {0}'.format(self.rows_max))
-
-            log.debug('offset: {0}'.format(offset))
-            result = col.aggregate(pipeline)
-
-            projection = [stage['$project'] for stage in pipeline if '$project' in stage.keys()]
-            assert (len(projection) <= 1)
-            if len(projection) == 1:
-                projection = projection[0]
-                projection = [field for field in projection if projection[field] == 1]
-
-                schema = self.resource_fields(resource_id)['schema']
-                fields = []
-                for field in schema.keys():
-                    if field in projection:
-                        fields.append({'id': field, 'type': schema[field]})
-            else:
-                fields = []
-
-            query_hash = calculate_hash(query_with_removed_ts)
-
-            result = {'records': result,
-                      'fields': fields,
+            result = {'records': list(records),
                       'records_hash': resultset_hash,
                       'query': query,
-                      'query_with_removed_ts': query_with_removed_ts,
                       'query_hash': query_hash}
 
             if include_total:
@@ -359,58 +319,38 @@ class MongoDbController:
 
             return result
 
-        def resource_fields(self, resource_id):
-            # TODO: just consider current valid records! -> atm all records are used for retrieving the datatype
-
+        def resource_fields(self, resource_id, timestamp=None):
             col, meta = self.__get_collections(resource_id)
 
-            mapper = Code("""
-                    function() {
-                        for (var key in this) {
-                            if(!this['valid_to']){
-                                emit(key, typeof(this[key]));
-                            }
-                        }
-                    }
-                """)
+            pipeline = []
 
-            # finding the most occuring type implemented, according Matthew Flaschen's approach:
-            # https://stackoverflow.com/questions/1053843/get-the-element-with-the-highest-occurrence-in-an-array
+            if timestamp:
+                pipeline = [
+                    {'$match': {'_id': {'$lte': timestamp}}}
+                ]
+            pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
+            pipeline.append({'$unwind': '$arrayofkeyvalue'})
+            pipeline.append({'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}})
 
-            reducer = Code("""
-                    function(key, array) {
-                        
-                        if(array.length == 0)
-                            return null;
-                        var modeMap = {};
-                        var maxEl = array[0], maxCount = 1;
-                        for(var i = 0; i < array.length; i++)
-                        {
-                            var el = array[i];
-                            if(modeMap[el] == null)
-                                modeMap[el] = 1;
-                            else
-                                modeMap[el]++;  
-                            if(modeMap[el] > maxCount)
-                            {
-                                maxEl = el;
-                                maxCount = modeMap[el];
-                            }
-                        }
-                        
-                        return maxEl;
-                    }
-                """)
+            result = col.aggregate(pipeline)
 
-            result = col.map_reduce(mapper, reducer, "{0}_keys".format(resource_id))
             schema = OrderedDict()
-            for key in result.find():
-                if key['_id'] not in ['_id', 'valid_from', 'valid_to']:
-                    schema[key['_id']] = key['value']
 
-            log.debug(meta.find_one())
+            result = list(result)
 
-            return {u'schema': schema, u'meta': meta.find_one()}
+            if len(result) > 0:
+                result = result[0]
+                for key in sorted(result['keys']):
+                    if key not in ['_id', 'valid_to', 'id']:
+                        schema[key] = 'string'  # TODO: guess data type
+                    if key == 'id':
+                        schema['id'] = 'number'
+            else:
+                schema['id'] = 'number'
+
+            result = {u'schema': schema, u'meta': meta.find_one()}
+
+            return result
 
     @classmethod
     def getInstance(cls):

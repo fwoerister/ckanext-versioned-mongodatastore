@@ -208,6 +208,8 @@ class MongoDataStoreBackend(DatastoreBackend):
         result = self.mongo_cntr.query_current_state(resource_id, statement, projection, sort, offset, limit, distinct,
                                                      include_total, records_format)
 
+        assert('fields' in result.keys())
+
         log.debug('id {0} assigned to currently executed search operation.'.format(result['pid']))
         return result
 
