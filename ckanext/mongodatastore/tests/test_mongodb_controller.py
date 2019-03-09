@@ -1,6 +1,5 @@
 import unittest
 from datetime import datetime
-from time import sleep
 
 import pytz
 from bson import ObjectId
@@ -140,18 +139,36 @@ class MongoDbControllerTest(unittest.TestCase):
         fields = mongo_cntr.resource_fields(new_resource_id)
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
-        # self.assertEqual(fields['schema']['field1'], 'string')
-        # self.assertEqual(fields['schema']['field2'], 'number')
-        # self.assertEqual(fields['schema']['id'], 'number')
 
         mongo_cntr.update_datatypes(new_resource_id, [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
         fields = mongo_cntr.resource_fields(new_resource_id)
 
         self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
-        # self.assertEqual(fields['schema']['field1'], 'number')
-        # self.assertEqual(fields['schema']['field2'], 'number')
-        # self.assertEqual(fields['schema']['id'], 'number')
+
+    def test_update_datatypes_with_type_error(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        new_resource_id = 'new_resource'
+        primary_key = 'id'
+
+        new_records = [
+            {'id': 1, 'field1': 'abc', 'field2': 123},
+            {'id': 2, 'field1': 'abc', 'field2': 456}
+        ]
+
+        mongo_cntr.create_resource(new_resource_id, primary_key)
+
+        self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
+
+        mongo_cntr.upsert(new_resource_id, new_records, False)
+
+        fields = mongo_cntr.resource_fields(new_resource_id)
+
+        self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
+
+        self.assertRaises(TypeError, mongo_cntr.update_datatypes, new_resource_id,
+                          [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
     def test_upsert(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -175,14 +192,10 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(new_resource_id, new_records, False)
 
-        sleep(1)
-
         result = mongo_cntr.query_current_state(new_resource_id, {}, {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 None, None, None, None, False)
 
         mongo_cntr.upsert(new_resource_id, updated_records, False)
-
-        sleep(1)
 
         updated_result = mongo_cntr.query_current_state(new_resource_id, {},
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},

@@ -67,10 +67,6 @@ class MongoDbController:
             meta = self.datastore.get_collection('{0}_meta'.format(resource_id))
             return col, meta
 
-        def __is_empty(self, resource_id):
-            col, _ = self.__get_collections(resource_id)
-            return col.count() == 0
-
         def __get_max_id(self, resource_id):
             col, _ = self.__get_collections(resource_id)
             return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
