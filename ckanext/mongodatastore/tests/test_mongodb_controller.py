@@ -172,7 +172,7 @@ class MongoDbControllerTest(unittest.TestCase):
         result = mongo_cntr.query_current_state(new_resource_id, {}, None, None, 0, 0, False, True)
 
         self.assertEqual(type(result['records'][0]['field1']), unicode)
-        self.assertEqual(type(result['records'][1]['field1']), int)
+        self.assertEqual(type(result['records'][1]['field1']), float)
 
     def test_upsert(self):
         mongo_cntr = MongoDbController.getInstance()
