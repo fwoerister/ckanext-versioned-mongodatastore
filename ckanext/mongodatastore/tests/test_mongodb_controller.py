@@ -106,7 +106,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.delete_resource(RESOURCE_ID, None, force=True)
 
-        self.assertFalse(mongo_cntr.resource_exists(RESOURCe_ID))
+        self.assertFalse(mongo_cntr.resource_exists(RESOURCE_ID))
 
     def test_update_datatypes(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -130,7 +130,7 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_update_datatypes_with_value_error(self):
         mongo_cntr = MongoDbController.getInstance()
 
-        mongo_cntr.create_resource(RESOURCe_ID, PRIMARY_KEY)
+        mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
 
         self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
 
@@ -241,4 +241,4 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertTrue('pid' in result.keys())
         self.assertIsNotNone(result['pid'])
 
-        self.assertEqual(result['records'], [{'field1': 'abc', 'field2': 123, 'id': 0}]+DATA_RECORD)
+        self.assertEqual(result['records'], [{'field1': 'abc', 'field2': 123, 'id': 0}] + DATA_RECORD)
