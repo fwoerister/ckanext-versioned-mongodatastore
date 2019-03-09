@@ -172,12 +172,12 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(result['records'], self.DATA_RECORD)
 
-        self.assertEqual(updated_result['records'], [{u'id': 1, u'field1': u'abc', u'field2': 123, 'distinct_value': 1},
-                                                     {u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_value': 1},
+        self.assertEqual(updated_result['records'], [{u'id': 1, u'field1': u'abc', u'field2': 123, 'distinct_field': 1},
+                                                     {u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_field': 1},
                                                      {u'id': 3, u'field1': u'new_value', u'field2': 321,
-                                                      'distinct_value': 1},
+                                                      'distinct_field': 1},
                                                      {u'id': 4, u'field1': u'jkl', u'field2': 432,
-                                                      'distinct_value': 2}])
+                                                      'distinct_field': 2}])
 
     def test_upsert_records_with_no_id(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -215,10 +215,10 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(result[u'records'], self.DATA_RECORD)
 
-        self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_value': 1},
+        self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_field': 1},
                                                   {u'id': 3, u'field1': u'new_value', u'field2': 321,
-                                                   'distinct_value': 1},
-                                                  {u'id': 4, u'field1': u'jkl', u'field2': 432, 'distinct_value': 2}])
+                                                   'distinct_field': 1},
+                                                  {u'id': 4, u'field1': u'jkl', u'field2': 432, 'distinct_field': 2}])
 
         self.assertEqual(history_result[u'records'], self.DATA_RECORD)
 
@@ -237,7 +237,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(self.RESOURCE_ID,
                           copy.deepcopy(self.DATA_RECORD) + [
-                              {'field2': 'abc', 'field1': 123, 'distinct_value': 1, 'id': 0}], False)
+                              {'field2': 'abc', 'field1': 123, 'distinct_field': 1, 'id': 0}], False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
                                                 {'_id': 0},
@@ -250,7 +250,7 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertIsNotNone(result['pid'])
 
         self.assertEqual(result['records'],
-                         [{'field1': 'abc', 'field2': 123, 'distinct_value': 1, 'id': 0}] + self.DATA_RECORD)
+                         [{'field1': 'abc', 'field2': 123, 'distinct_field': 1, 'id': 0}] + self.DATA_RECORD)
 
     def test_distinct_query(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -261,7 +261,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
         mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE, False)
 
-        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'distinct_value': 1},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'distinct_field': 1},
                                                 None, 0, 0, True, True)
 
-        self.assertEqual(result['records'], [{'distinct_value': 1, 'distinct_value': 2}])
+        self.assertEqual(result['records'], [{'distinct_field': 1, 'distinct_field': 2}])
