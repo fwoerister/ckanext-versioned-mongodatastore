@@ -113,7 +113,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.delete_resource(new_resource_id, None)
 
-        self.assertEqual(col.count_documents({}), 2)
+        self.assertEqual(col.count_documents({}), 4)
 
         self.assertTrue(mongo_cntr.resource_exists(new_resource_id))
 
