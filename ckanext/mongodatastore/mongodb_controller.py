@@ -48,18 +48,6 @@ def convert_to_object_id(datetime_value):
     return ObjectId(hex_timestamp + '0000000000000000')
 
 
-def generate_group_expression(projection):
-    expression = OrderedDict()
-
-    expression['_id'] = '$id'
-
-    for key in projection:
-        if key not in ['_id']:
-            expression[key] = {'$last': '${0}'.format(key)}
-
-    return expression
-
-
 # TODO: implement session handling + rollbacks in case of failed transactions
 class MongoDbController:
     def __init__(self):
@@ -87,6 +75,19 @@ class MongoDbController:
             col, _ = self.__get_collections(resource_id)
             return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
 
+        def __generate_history_group_expression(self, resource_id, timestamp):
+            expression = OrderedDict()
+            expression['_id'] = '$id'
+
+            fields = self.resource_fields(resource_id, timestamp)
+            fields = fields['schema']
+
+            for key in fields:
+                if key not in ['_id']:
+                    expression[key] = {'$last': '${0}'.format(key)}
+
+            return expression
+
         def get_all_ids(self):
             return [name for name in self.datastore.list_collection_names() if not name.endswith('_meta')]
 
@@ -101,25 +102,20 @@ class MongoDbController:
             log.debug('record entry added')
             self.datastore.get_collection('{0}_meta'.format(resource_id)).insert_one({'record_id': primary_key})
 
-        def delete_resource(self, resource_id, filters, force=False):
+        def delete_resource(self, resource_id, filters={}, force=False):
             if force:
                 self.client.get_database(CKAN_DATASTORE).drop_collection(resource_id)
             else:
                 col = self.client.get_database(CKAN_DATASTORE).get_collection(resource_id)
 
-                timestamp = convert_to_object_id(datetime.utcnow().replace(tzinfo=pytz.UTC))
+                ids_to_delete = col.find(filters, {'_id': 0, 'id': 1})
 
-                if filters:
-                    for record in col.find({'$and': [{'valid_to': {'$exists': 0}}, filters]}):
-                        col.update_one({'_id': record['_id']}, {'$set': {'valid_to': timestamp}})
-                else:
-                    for record in col.find({'valid_to': {'$exists': 0}}):
-                        col.update_one({'_id': record['_id']}, {'$set': {'valid_to': timestamp}})
+                for id_to_delete in ids_to_delete:
+                    col.insert_one({'id': id_to_delete['id'], '_deleted': True})
 
         def update_datatypes(self, resource_id, fields):
             col, meta = self.__get_collections(resource_id)
 
-            # TODO: This is a workaround, as utcnow() does not set the correct timezone!
             timestamp = self.__get_max_id(resource_id)
 
             pipeline = [{'$match': {}}]
@@ -204,13 +200,11 @@ class MongoDbController:
                 else:
                     result['records'] = list(result['records'])
 
-                log.debug(projection)
-
-                schema = self.resource_fields(q.resource_id)['schema']
+                schema = self.resource_fields(q.resource_id, q.timestamp)['schema']
                 schema_fields = []
                 for field in schema.keys():
                     log.debug(field)
-                    if field in projection:
+                    if not projection or field in projection:
                         schema_fields.append({'id': field, 'type': schema[field]})
 
                 result['fields'] = schema_fields
@@ -224,7 +218,6 @@ class MongoDbController:
         def query_current_state(self, resource_id, statement, projection, sort, offset, limit, distinct, include_total,
                                 records_format='objects'):
 
-            # TODO: This is a workaround, as utcnow() does not set the correct timezone!
             timestamp = self.__get_max_id(resource_id)
 
             if sort is None:
@@ -242,7 +235,6 @@ class MongoDbController:
                 projection = normalize_json(projection)
 
             pipeline = [
-                {'$group': generate_group_expression(projection)},
                 {'$match': statement},
                 {'$sort': sort_dict}
             ]
@@ -268,11 +260,11 @@ class MongoDbController:
 
             result['pid'] = pid
 
-            schema = self.resource_fields(resource_id)['schema']
+            schema = self.resource_fields(resource_id, timestamp)['schema']
             schema_fields = []
             for field in schema.keys():
                 log.debug(field)
-                if field in projection:
+                if not projection or field in projection:
                     schema_fields.append({'id': field, 'type': schema[field]})
 
             result['fields'] = schema_fields
@@ -290,8 +282,14 @@ class MongoDbController:
             col, meta = self.__get_collections(resource_id)
 
             history_stage = [
+                # remove documents, that were created after the timestamp
                 {'$match': {'_id': {'$lte': timestamp}}},
-                {'$match': {'$or': [{'valid_to': {'$exists': 0}}, {'valid_to': {'$gt': timestamp}}]}}
+
+                # get the latest versions of each id
+                {'$group': self.__generate_history_group_expression(resource_id, timestamp)},
+
+                # remove documents, that have already been deleted
+                {'$match': {'_deleted': {'$not': {'$eq': True}}}}
             ]
 
             pagination_stage = []
@@ -322,8 +320,6 @@ class MongoDbController:
 
             query_hash = calculate_hash(query)
 
-            schema = self.resource_fields(resource_id)['schema']
-
             result = {'records': list(records),
                       'records_hash': resultset_hash,
                       'query': query,
@@ -339,7 +335,7 @@ class MongoDbController:
 
             return result
 
-        def resource_fields(self, resource_id):
+        def resource_fields(self, resource_id, timestamp=None):
             col, meta = self.__get_collections(resource_id)
 
             pipeline = [
@@ -348,6 +344,11 @@ class MongoDbController:
                 {'$unwind': '$arrayofkeyvalue'},
                 {'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}}
             ]
+
+            if timestamp:
+                pipeline = [
+                               {'$match': {'_id': {'$lte': timestamp}}}
+                           ] + pipeline
 
             result = col.aggregate(pipeline)
 
@@ -364,8 +365,6 @@ class MongoDbController:
 
             result = {u'schema': schema, u'meta': meta.find_one()}
 
-            log.debug('""""""""""""""resource_fields: RESULT""""""""""""""""""')
-            log.debug(result)
             return result
 
     @classmethod
