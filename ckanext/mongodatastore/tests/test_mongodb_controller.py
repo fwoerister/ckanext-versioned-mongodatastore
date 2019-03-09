@@ -170,12 +170,12 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertEqual(len(result['records']), 3)
         self.assertEqual(len(updated_result['records']), 4)
 
-        self.assertEqual(result['records'][0], {'id': 1, 'field1': 'abc', 'field2': 123})
-        self.assertEqual(result['records'][1], {'id': 2, 'field1': 'def', 'field2': 456})
+        self.assertEqual(result['records'], self.DATA_RECORD)
 
-        self.assertEqual(updated_result['records'][0], {'id': 1, 'field1': 'abc', 'field2': 123})
-        self.assertEqual(updated_result['records'][1], {'id': 2, 'field1': 'new_value', 'field2': 1})
-        self.assertEqual(updated_result['records'][2], {'id': 3, 'field1': 'ghi', 'field2': 1})
+        self.assertEqual(updated_result['records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
+                                                     {u'id': 2, u'field1': u'def', u'field2': 456},
+                                                     {u'id': 3, u'field1': u'new_value', u'field2': 321},
+                                                     {u'id': 4, u'field1': u'jkl', u'field2': 432}])
 
     def test_upsert_records_with_no_id(self):
         mongo_cntr = MongoDbController.getInstance()
