@@ -91,7 +91,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.create_resource(RESOURCE_ID, PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCe_ID))
+        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
 
         mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
 
@@ -132,7 +132,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.create_resource(RESOURCe_ID, PRIMARY_KEY)
 
-        self.assertTrue(mongo_cntr.resource_exists(RESOURCe_ID))
+        self.assertTrue(mongo_cntr.resource_exists(RESOURCE_ID))
 
         mongo_cntr.upsert(RESOURCE_ID, DATA_RECORD, False)
 
@@ -235,6 +235,8 @@ class MongoDbControllerTest(unittest.TestCase):
                                                 {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                 [{'field1': 1}], None, None,
                                                 False, True)
+
+        print(result['records'])
 
         self.assertTrue('pid' in result.keys())
         self.assertIsNotNone(result['pid'])
