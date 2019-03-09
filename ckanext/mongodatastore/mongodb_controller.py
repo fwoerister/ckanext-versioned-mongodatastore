@@ -180,7 +180,7 @@ class MongoDbController:
                 schema_fields = []
                 for field in schema.keys():
                     log.debug(field)
-                    if not projection or field in projection:
+                    if not projection or (field in projection and projection[field] == 1):
                         schema_fields.append({'id': field, 'type': schema[field]})
 
                 result['fields'] = schema_fields
@@ -240,7 +240,7 @@ class MongoDbController:
             schema_fields = []
             for field in schema.keys():
                 log.debug(field)
-                if not projection or field in projection:
+                if not projection or (field in projection and projection[field] == 1):
                     schema_fields.append({'id': field, 'type': schema[field]})
 
             result['fields'] = schema_fields
