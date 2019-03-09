@@ -135,6 +135,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
+        self.DATA_RECORD[1]['field1'] = '1234'
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
         fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
@@ -166,8 +167,8 @@ class MongoDbControllerTest(unittest.TestCase):
                                                         {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
                                                         None, None, None, None, False)
 
-        self.assertEqual(len(result['records']), 2)
-        self.assertEqual(len(updated_result['records']), 3)
+        self.assertEqual(len(result['records']), 3)
+        self.assertEqual(len(updated_result['records']), 4)
 
         self.assertEqual(result['records'][0], {'id': 1, 'field1': 'abc', 'field2': 123})
         self.assertEqual(result['records'][1], {'id': 2, 'field1': 'def', 'field2': 456})
