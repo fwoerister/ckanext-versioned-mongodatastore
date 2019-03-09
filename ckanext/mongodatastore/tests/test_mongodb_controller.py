@@ -264,4 +264,6 @@ class MongoDbControllerTest(unittest.TestCase):
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'distinct_field': 1},
                                                 None, 0, 0, True, True)
 
+        print(result)
+
         self.assertEqual(result['records'], [{'distinct_field': 1, 'distinct_field': 2}])
