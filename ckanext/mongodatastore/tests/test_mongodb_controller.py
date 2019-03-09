@@ -17,17 +17,17 @@ class MongoDbControllerTest(unittest.TestCase):
         self.RESOURCE_ID = 'test_resource_id'
 
         self.DATA_RECORD = [
-            {u'id': 1, u'field1': u'abc', u'field2': 123},
-            {u'id': 2, u'field1': u'def', u'field2': 456},
-            {u'id': 3, u'field1': u'ghi', u'field2': 456}
+            {u'id': 1, u'field1': u'abc', u'field2': 123, 'distinct_field': 1},
+            {u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_field': 1},
+            {u'id': 3, u'field1': u'ghi', u'field2': 456, 'distinct_field': 1}
         ]
 
         self.DATA_RECORD_KEYS = ['field1', 'field2', 'id']
         self.DATA_RECORD_CSV = "abc;123;1\r\ndef;456;2\r\nghi;456;3\r\n"
 
         self.DATA_RECORD_UPDATE = [
-            {u'id': 3, u'field1': u'new_value', u'field2': 321},
-            {u'id': 4, u'field1': u'jkl', u'field2': 432}
+            {u'id': 3, u'field1': u'new_value', u'field2': 321, 'distinct_field': 1},
+            {u'id': 4, u'field1': u'jkl', u'field2': 432, 'distinct_field': 2}
         ]
 
         self.DATA_RECORD_INVALID_UPDATE = [
@@ -126,7 +126,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
-        self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
+        self.assertEqual(fields['schema'].keys(), ['distinct_field', 'field1', 'field2', 'id'])
 
     def test_update_datatypes_with_value_error(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -140,7 +140,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         fields = mongo_cntr.resource_fields(self.RESOURCE_ID)
 
-        self.assertEqual(fields['schema'].keys(), ['field1', 'field2', 'id'])
+        self.assertEqual(fields['schema'].keys(), ['distinct_field', 'field1', 'field2', 'id'])
 
         mongo_cntr.update_datatypes(self.RESOURCE_ID, [{'id': 'field1', 'info': {'type_override': 'number'}}])
 
@@ -246,3 +246,14 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertIsNotNone(result['pid'])
 
         self.assertEqual(result['records'], [{'field1': 'abc', 'field2': 123, 'id': 0}] + self.DATA_RECORD)
+
+    def test_distinct_query(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCe_ID, self.DATA_RECORD_UPDATE, False)
+
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'distinct_value': 1},
+                                                None, 0, 0, True, True)
+
+        self.assertEqual(result['records'], [{'distinct_value': 1, 'distinct_value': 2}])
