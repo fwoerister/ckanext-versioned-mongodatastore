@@ -3,9 +3,7 @@ import json
 import logging
 from StringIO import StringIO
 from collections import OrderedDict
-from datetime import datetime
 
-import pytz
 from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
@@ -40,12 +38,6 @@ def convert_to_csv(result_set, fields):
     returnval = output.getvalue()
     output.close()
     return returnval
-
-
-def convert_to_object_id(datetime_value):
-    epoch = datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
-    hex_timestamp = hex(int((datetime_value - epoch).total_seconds()))[2:]
-    return ObjectId(hex_timestamp + '0000000000000000')
 
 
 # TODO: implement session handling + rollbacks in case of failed transactions
