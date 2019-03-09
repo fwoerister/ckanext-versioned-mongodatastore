@@ -213,6 +213,11 @@ class MongoDbControllerTest(unittest.TestCase):
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
         history_result_csv = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, 'csv')
 
+        print('RESULT')
+        print(result)
+        print('NEW RESULT')
+        print(new_result)
+
         self.assertEqual(result[u'records'], self.DATA_RECORD)
 
         self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_field': 1},
@@ -264,6 +269,4 @@ class MongoDbControllerTest(unittest.TestCase):
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0, 'distinct_field': 1},
                                                 None, 0, 0, True, True)
 
-        print(result)
-
-        self.assertEqual(result['records'], [{'distinct_field': 1, 'distinct_field': 2}])
+        self.assertEqual(result['records'], [{'distinct_field': 1}, {'distinct_field': 2}])
