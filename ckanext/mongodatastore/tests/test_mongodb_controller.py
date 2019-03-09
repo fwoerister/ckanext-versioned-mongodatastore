@@ -22,8 +22,8 @@ class MongoDbControllerTest(unittest.TestCase):
             {u'id': 3, u'field1': u'ghi', u'field2': 456, 'distinct_field': 1}
         ]
 
-        self.DATA_RECORD_KEYS = ['field1', 'field2', 'id']
-        self.DATA_RECORD_CSV = "abc;123;1\r\ndef;456;2\r\nghi;456;3\r\n"
+        self.DATA_RECORD_KEYS = ['field1', 'field2', 'distinct_field', 'id']
+        self.DATA_RECORD_CSV = "abc;123;1;1\r\ndef;456;1;2\r\nghi;456;1;3\r\n"
 
         self.DATA_RECORD_UPDATE = [
             {u'id': 3, u'field1': u'new_value', u'field2': 321, 'distinct_field': 1},
@@ -172,10 +172,12 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(result['records'], self.DATA_RECORD)
 
-        self.assertEqual(updated_result['records'], [{u'id': 1, u'field1': u'abc', u'field2': 123},
-                                                     {u'id': 2, u'field1': u'def', u'field2': 456},
-                                                     {u'id': 3, u'field1': u'new_value', u'field2': 321},
-                                                     {u'id': 4, u'field1': u'jkl', u'field2': 432}])
+        self.assertEqual(updated_result['records'], [{u'id': 1, u'field1': u'abc', u'field2': 123, 'distinct_value': 1},
+                                                     {u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_value': 1},
+                                                     {u'id': 3, u'field1': u'new_value', u'field2': 321,
+                                                      'distinct_value': 1},
+                                                     {u'id': 4, u'field1': u'jkl', u'field2': 432,
+                                                      'distinct_value': 2}])
 
     def test_upsert_records_with_no_id(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -213,9 +215,10 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(result[u'records'], self.DATA_RECORD)
 
-        self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456},
-                                                  {u'id': 3, u'field1': u'new_value', u'field2': 321},
-                                                  {u'id': 4, u'field1': u'jkl', u'field2': 432}])
+        self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_value': 1},
+                                                  {u'id': 3, u'field1': u'new_value', u'field2': 321,
+                                                   'distinct_value': 1},
+                                                  {u'id': 4, u'field1': u'jkl', u'field2': 432, 'distinct_value': 2}])
 
         self.assertEqual(history_result[u'records'], self.DATA_RECORD)
 
@@ -233,10 +236,11 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
         mongo_cntr.upsert(self.RESOURCE_ID,
-                          copy.deepcopy(self.DATA_RECORD) + [{'field1': 'abc', 'field2': 123, 'id': 0}], False)
+                          copy.deepcopy(self.DATA_RECORD) + [
+                              {'field2': 'abc', 'field1': 123, 'distinct_value': 1, 'id': 0}], False)
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
-                                                {'_id': 0, 'id': 1, 'field1': 1, 'field2': 1},
+                                                {'_id': 0},
                                                 [{'field1': 1}], None, None,
                                                 False, True)
 
@@ -245,10 +249,14 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertTrue('pid' in result.keys())
         self.assertIsNotNone(result['pid'])
 
-        self.assertEqual(result['records'], [{'field1': 'abc', 'field2': 123, 'id': 0}] + self.DATA_RECORD)
+        self.assertEqual(result['records'],
+                         [{'field1': 'abc', 'field2': 123, 'distinct_value': 1, 'id': 0}] + self.DATA_RECORD)
 
     def test_distinct_query(self):
         mongo_cntr = MongoDbController.getInstance()
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
+
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
         mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
         mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD_UPDATE, False)
