@@ -279,13 +279,18 @@ class MongoDbControllerTest(unittest.TestCase):
                                                 [{'field1': 1}], None, None,
                                                 False, True)
 
-        print(result['records'])
+        result_csv = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
+                                                    {'_id': 0, 'id': 1, 'field1': 1},
+                                                    [{'field1': 1}], None, None,
+                                                    False, True, 'csv')
 
         self.assertTrue('pid' in result.keys())
         self.assertIsNotNone(result['pid'])
 
         self.assertEqual(result['records'],
                          [{'field1': 'abc', 'field2': 123, 'distinct_field': 1, 'id': 0}] + self.DATA_RECORD)
+
+        self.assertEqual(result_csv['records'], 'abc;0\r\nabc;1\r\ndef;2\r\nghi;3\r\n')
 
     def test_distinct_query(self):
         mongo_cntr = MongoDbController.getInstance()
@@ -300,3 +305,16 @@ class MongoDbControllerTest(unittest.TestCase):
                                                 None, 0, 0, True, True)
 
         self.assertEqual(result['records'], [{'distinct_field': 1}, {'distinct_field': 2}])
+
+    def test_pagination(self):
+        mongo_cntr = MongoDbController.getInstance()
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
+
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
+
+        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0}, None, 1, 1, False, False)
+
+        self.assertEqual(len(result['records']), 1)
+
+        self.assertEqual(result['records'][0], self.DATA_RECORD[1])
