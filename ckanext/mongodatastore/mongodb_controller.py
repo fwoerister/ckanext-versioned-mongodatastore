@@ -170,13 +170,7 @@ class MongoDbController:
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
                 projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']
 
-                print('PROJECTION')
-                print(projection)
-
-                fields = self.resource_fields(q.resource_id, q.timestamp)['schema']
-
-                print('FIELDS')
-                print(fields)
+                fields = self.resource_fields(q.resource_id, None)['schema']
 
                 printable_fields = []
 
@@ -341,7 +335,7 @@ class MongoDbController:
 
             if timestamp:
                 pipeline = [
-                    {'$match': {'_id': {'$lte': timestamp}}}
+                    {'$match': {'_id': {'$lte': ObjectId(timestamp)}}}
                 ]
             pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
             pipeline.append({'$unwind': '$arrayofkeyvalue'})
