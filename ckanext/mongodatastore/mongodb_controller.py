@@ -170,23 +170,22 @@ class MongoDbController:
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
                 projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']
 
-                fields = self.resource_fields(q.resource_id, None)['schema']
+                schema = self.resource_fields(q.resource_id, None)['schema']
 
                 printable_fields = []
 
-                for field in fields:
+                for field in schema:
                     if projection.get(field, 0) == 1:
                         printable_fields.append(field)
 
                 if len(printable_fields) == 0:
-                    printable_fields = fields
+                    printable_fields = schema
 
                 if records_format == 'csv':
                     result['records'] = convert_to_csv(result['records'], printable_fields)
                 else:
                     result['records'] = list(result['records'])
 
-                schema = self.resource_fields(q.resource_id, q.timestamp)['schema']
                 schema_fields = []
                 for field in schema.keys():
                     log.debug(field)

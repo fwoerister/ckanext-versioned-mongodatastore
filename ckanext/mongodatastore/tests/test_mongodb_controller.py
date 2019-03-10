@@ -213,11 +213,6 @@ class MongoDbControllerTest(unittest.TestCase):
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
         history_result_csv = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, 'csv')
 
-        print('RESULT')
-        print(result)
-        print('NEW RESULT')
-        print(new_result)
-
         self.assertEqual(result[u'records'], self.DATA_RECORD)
 
         self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def', u'field2': 456, 'distinct_field': 1},
@@ -228,6 +223,41 @@ class MongoDbControllerTest(unittest.TestCase):
         self.assertEqual(history_result[u'records'], self.DATA_RECORD)
 
         self.assertEqual(history_result_csv[u'records'], self.DATA_RECORD_CSV)
+
+    def test_retrieve_stored_query_with_projection(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
+
+        self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
+
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
+
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0, 'field1': 1, 'id': 1},
+                                                None, None, None, False, True)
+
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD_UPDATE), False)
+
+        mongo_cntr.delete_resource(self.RESOURCE_ID, {u'id': 1})
+
+        new_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
+                                                    {u'_id': 0, 'field1': 1, 'id': 1},
+                                                    None, None, None, False, True)
+
+        history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
+        history_result_csv = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None, 'csv')
+
+        self.assertEqual(result[u'records'],
+                         [{'field1': record['field1'], 'id': record['id']} for record in self.DATA_RECORD])
+
+        self.assertEqual(new_result[u'records'], [{u'id': 2, u'field1': u'def'},
+                                                  {u'id': 3, u'field1': u'new_value'},
+                                                  {u'id': 4, u'field1': u'jkl'}])
+
+        self.assertEqual(history_result[u'records'],
+                         [{'field1': record['field1'], 'id': record['id']} for record in self.DATA_RECORD])
+
+        self.assertEqual(history_result_csv[u'records'], "abc;1\r\ndef;2\r\nghi;3\r\n")
 
     def test_retrieve_nonexisting_pid(self):
         mongo_cntr = MongoDbController.getInstance()
