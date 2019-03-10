@@ -131,7 +131,6 @@ class MongoDbController:
                         log.warn('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                     record[record_id],
                                                                                                     resource_id))
-                record.pop('_id')
                 self.upsert(resource_id, [record], False)
             # TODO: store override information in meta entry
 
