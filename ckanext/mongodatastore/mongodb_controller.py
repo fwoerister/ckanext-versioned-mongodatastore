@@ -3,9 +3,7 @@ import json
 import logging
 from StringIO import StringIO
 from collections import OrderedDict
-from datetime import datetime
 
-import pytz
 from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
@@ -42,12 +40,6 @@ def convert_to_csv(result_set, fields):
     return returnval
 
 
-def convert_to_object_id(datetime_value):
-    epoch = datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.UTC)
-    hex_timestamp = hex(int((datetime_value - epoch).total_seconds()))[2:]
-    return ObjectId(hex_timestamp + '0000000000000000')
-
-
 # TODO: implement session handling + rollbacks in case of failed transactions
 class MongoDbController:
     def __init__(self):
@@ -82,6 +74,7 @@ class MongoDbController:
                 if key not in ['_id']:
                     expression[key] = {'$last': '${0}'.format(key)}
 
+            expression['_deleted'] = {'$last': '$_deleted'}
             return expression
 
         def get_all_ids(self):
@@ -138,7 +131,6 @@ class MongoDbController:
                         log.warn('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
                                                                                                     record[record_id],
                                                                                                     resource_id))
-                record.pop('_id')
                 self.upsert(resource_id, [record], False)
             # TODO: store override information in meta entry
 
@@ -151,7 +143,7 @@ class MongoDbController:
             records_without_id = [record for record in records if record_id_key not in record.keys()]
 
             if len(records_without_id) > 0:
-                raise MongoDbControllerException('For a datastore upsert, every an id '
+                raise MongoDbControllerException('For a datastore upsert, an id '
                                                  'value has to be set for every record. '
                                                  'In this collection the id attribute is "{0}"'.format(record_id_key))
 
@@ -176,11 +168,21 @@ class MongoDbController:
                 result['query'] = q
 
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
-                projection = [projection for projection in query if '$project' in projection.keys()][0]['$project']
-                fields = [field for field in projection if projection[field] == 1]
+                projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']
+
+                fields = self.resource_fields(q.resource_id, None)['schema']
+
+                printable_fields = []
+
+                for field in fields:
+                    if projection.get(field, 0) == 1:
+                        printable_fields.append(field)
+
+                if len(printable_fields) == 0:
+                    printable_fields = fields
 
                 if records_format == 'csv':
-                    result['records'] = convert_to_csv(result['records'], fields)
+                    result['records'] = convert_to_csv(result['records'], printable_fields)
                 else:
                     result['records'] = list(result['records'])
 
@@ -188,7 +190,7 @@ class MongoDbController:
                 schema_fields = []
                 for field in schema.keys():
                     log.debug(field)
-                    if not projection or field in projection:
+                    if not projection or (field in projection and projection[field] == 1):
                         schema_fields.append({'id': field, 'type': schema[field]})
 
                 result['fields'] = schema_fields
@@ -225,13 +227,17 @@ class MongoDbController:
 
             if distinct:
                 group_expr = {'$group': {'_id': {}}}
+                sort_dict = OrderedDict()
                 for field in projection.keys():
                     if field != '_id':
                         group_expr['$group']['_id'][field] = '${0}'.format(field)
                         group_expr['$group'][field] = {'$first': '${0}'.format(field)}
+                        sort_dict[field] = 1
+                sort_dict['id'] = 1
 
                 log.debug('$group stage: {0}'.format(group_expr))
                 pipeline.append(group_expr)
+                pipeline.append({'$sort': sort_dict})
 
             if projection:
                 log.debug('projection: {0}'.format(projection))
@@ -248,7 +254,7 @@ class MongoDbController:
             schema_fields = []
             for field in schema.keys():
                 log.debug(field)
-                if not projection or field in projection:
+                if not projection or (field in projection and projection[field] == 1):
                     schema_fields.append({'id': field, 'type': schema[field]})
 
             result['fields'] = schema_fields
@@ -273,7 +279,10 @@ class MongoDbController:
                 {'$group': self.__generate_history_group_expression(resource_id, timestamp)},
 
                 # remove documents, that have already been deleted
-                {'$match': {'_deleted': {'$not': {'$eq': True}}}}
+                {'$match': {'_deleted': {'$not': {'$eq': True}}}},
+
+                # remove history related attributes
+                {'$project': {'_id': 0, '_deleted': 0}}
             ]
 
             pagination_stage = []
@@ -285,7 +294,7 @@ class MongoDbController:
                 if 0 < limit <= self.rows_max:
                     pagination_stage.append({'$limit': limit})
                 if limit < self.rows_max:
-                    pipeline.append({'$limit': self.rows_max})
+                    pagination_stage.append({'$limit': self.rows_max})
                     limit = self.rows_max
 
             resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline))
@@ -304,7 +313,7 @@ class MongoDbController:
 
             query_hash = calculate_hash(query)
 
-            result = {'records': list(records),
+            result = {'records': records,
                       'records_hash': resultset_hash,
                       'query': query,
                       'query_hash': query_hash}
@@ -326,7 +335,7 @@ class MongoDbController:
 
             if timestamp:
                 pipeline = [
-                    {'$match': {'_id': {'$lte': timestamp}}}
+                    {'$match': {'_id': {'$lte': ObjectId(timestamp)}}}
                 ]
             pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
             pipeline.append({'$unwind': '$arrayofkeyvalue'})
@@ -341,7 +350,7 @@ class MongoDbController:
             if len(result) > 0:
                 result = result[0]
                 for key in sorted(result['keys']):
-                    if key not in ['_id', 'valid_to', 'id']:
+                    if key not in ['_id', 'valid_to', 'id', '_deleted']:
                         schema[key] = 'string'  # TODO: guess data type
                     if key == 'id':
                         schema['id'] = 'number'

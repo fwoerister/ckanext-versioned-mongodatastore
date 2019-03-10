@@ -39,6 +39,9 @@ sudo -u postgres psql -c 'CREATE DATABASE ckan_test WITH OWNER ckan_default;'
 sudo -u postgres psql -c "CREATE USER query_store WITH PASSWORD 'query_store';"
 sudo -u postgres psql -c 'CREATE DATABASE query_store WITH OWNER query_store;'
 
+sudo -u postgres psql -c "CREATE USER test_import_db WITH PASSWORD 'test_import_db';"
+sudo -u postgres psql -c 'CREATE DATABASE test_import_db WITH OWNER test_import_db;'
+
 
 echo "SOLR config..."
 # Solr is multicore for tests on ckan master, but it's easier to run tests on
