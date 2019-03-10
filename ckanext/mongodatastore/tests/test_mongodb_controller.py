@@ -241,7 +241,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr.delete_resource(self.RESOURCE_ID, {u'id': 1})
 
         new_result = mongo_cntr.query_current_state(self.RESOURCE_ID, {},
-                                                    {u'_id': 0},
+                                                    {u'_id': 0, 'field1': 1, 'id': 1},
                                                     None, None, None, False, True)
 
         history_result = mongo_cntr.retrieve_stored_query(result[u'pid'], None, None)
