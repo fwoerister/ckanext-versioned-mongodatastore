@@ -175,6 +175,9 @@ class MongoDbController:
                 else:
                     fields = [f for f in self.resource_fields(q.resource_id, q.timestamp)['schema']]
 
+                print('FIELDS')
+                print(fields)
+
                 if records_format == 'csv':
                     result['records'] = convert_to_csv(result['records'], fields)
                 else:
