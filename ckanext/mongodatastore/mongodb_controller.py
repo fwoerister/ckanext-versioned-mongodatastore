@@ -168,21 +168,21 @@ class MongoDbController:
                 result['query'] = q
 
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
-                projection = [projection for projection in query if '$project' in projection.keys()][0]['$project']
+                projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']
 
-                fields = set()
+                fields = self.resource_fields(q.resource_id, q.timestamp)['schema']
 
-                for record in result['records']:
-                    for key in record:
-                        fields.add(key)
+                printable_fields = []
 
-                result['records'].rewind()
+                for field in fields:
+                    if projection.get(field, 0) == 1:
+                        printable_fields.append(field)
 
-                print('FIELDS')
-                print(fields)
+                if len(printable_fields) == 0:
+                    printable_fields = fields
 
                 if records_format == 'csv':
-                    result['records'] = convert_to_csv(result['records'], fields)
+                    result['records'] = convert_to_csv(result['records'], printable_fields)
                 else:
                     result['records'] = list(result['records'])
 
@@ -294,7 +294,7 @@ class MongoDbController:
                 if 0 < limit <= self.rows_max:
                     pagination_stage.append({'$limit': limit})
                 if limit < self.rows_max:
-                    pipeline.append({'$limit': self.rows_max})
+                    pagination_stage.append({'$limit': self.rows_max})
                     limit = self.rows_max
 
             resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline))
