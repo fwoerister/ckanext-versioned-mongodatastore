@@ -23,7 +23,7 @@ class MongoDbControllerTest(unittest.TestCase):
         ]
 
         self.DATA_RECORD_KEYS = ['distinct_field', 'field1', 'field2', 'id']
-        self.DATA_RECORD_CSV = "abc;123;1;1\r\ndef;456;1;2\r\nghi;456;1;3\r\n"
+        self.DATA_RECORD_CSV = "1;abc;123;1\r\n1;def;456;2\r\n1;ghi;456;3\r\n"
 
         self.DATA_RECORD_UPDATE = [
             {u'id': 3, u'field1': u'new_value', u'field2': 321, 'distinct_field': 1},

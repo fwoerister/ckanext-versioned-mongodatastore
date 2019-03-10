@@ -169,7 +169,11 @@ class MongoDbController:
 
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
                 projection = [projection for projection in query if '$project' in projection.keys()][0]['$project']
-                fields = [field for field in projection if projection[field] == 1]
+
+                if len([p for p in projection if projection[p] == 1]) != 0:
+                    fields = [field for field in projection if projection[field] == 1]
+                else:
+                    fields = [f for f in self.resource_fields(q.resource_id, q.timestamp)['schema']]
 
                 if records_format == 'csv':
                     result['records'] = convert_to_csv(result['records'], fields)
