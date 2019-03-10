@@ -175,7 +175,7 @@ class MongoDbController:
                 printable_fields = []
 
                 for field in schema:
-                    if projection.get(field, 0) == 1:
+                    if not projection or projection.get(field, 0) == 1:
                         printable_fields.append(field)
 
                 if len(printable_fields) == 0:
@@ -255,7 +255,7 @@ class MongoDbController:
             printable_fields = []
 
             for field in schema:
-                if projection.get(field, 0) == 1:
+                if not projection or projection.get(field, 0) == 1:
                     printable_fields.append(field)
 
             if len(printable_fields) == 0:
