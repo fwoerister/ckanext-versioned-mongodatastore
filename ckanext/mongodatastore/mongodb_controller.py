@@ -313,7 +313,7 @@ class MongoDbController:
 
             query_hash = calculate_hash(query)
 
-            result = {'records': list(records),
+            result = {'records': records,
                       'records_hash': resultset_hash,
                       'query': query,
                       'query_hash': query_hash}
