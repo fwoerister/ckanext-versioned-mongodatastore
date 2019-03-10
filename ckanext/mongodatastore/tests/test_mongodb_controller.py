@@ -233,7 +233,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
 
-        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0, 'field1': 1},
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {u'_id': 0, 'field1': 1, 'id': 1},
                                                 None, None, None, False, True)
 
         mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD_UPDATE), False)
