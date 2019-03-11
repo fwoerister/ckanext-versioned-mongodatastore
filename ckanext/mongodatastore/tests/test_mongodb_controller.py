@@ -1,9 +1,13 @@
+import logging
 import unittest
 import copy
+from time import sleep
 
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, \
     MongoDbControllerException, QueryNotFoundException
+
+log = logging.getLogger(__name__)
 
 
 class MongoDbControllerTest(unittest.TestCase):
@@ -33,6 +37,8 @@ class MongoDbControllerTest(unittest.TestCase):
         self.DATA_RECORD_INVALID_UPDATE = [
             {u'field1': u'abc', u'field2': u'abc'}
         ]
+
+        instance.querystore.purge_query_store()
 
     # helper function tests
 
@@ -254,6 +260,8 @@ class MongoDbControllerTest(unittest.TestCase):
                                                   {u'id': 3, u'field1': u'new_value'},
                                                   {u'id': 4, u'field1': u'jkl'}])
 
+        log.debug(result['pid'])
+
         self.assertEqual(history_result[u'records'],
                          [{'field1': record['field1'], 'id': record['id']} for record in self.DATA_RECORD])
 
@@ -312,7 +320,7 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
-        mongo_cntr.upsert(self.RESOURCE_ID, self.DATA_RECORD, False)
+        mongo_cntr.upsert(self.RESOURCE_ID, copy.deepcopy(self.DATA_RECORD), False)
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, {'_id': 0}, None, 1, 1, False, False)
 
         self.assertEqual(len(result['records']), 1)

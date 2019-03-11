@@ -317,6 +317,7 @@ class MongoDbController:
 
             query = helper.JSONEncoder().encode(pipeline)
 
+            log.debug('submitted query: {0}'.format(history_stage + pipeline + pagination_stage))
             records = col.aggregate(history_stage + pipeline + pagination_stage)
 
             query_hash = calculate_hash(query)
