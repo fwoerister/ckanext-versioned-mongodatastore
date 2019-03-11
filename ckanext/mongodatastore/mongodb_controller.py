@@ -170,16 +170,16 @@ class MongoDbController:
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
                 projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']
 
-                schema = self.resource_fields(q.resource_id, None)['schema']
+                schema = self.resource_fields(q.resource_id, q.timestamp)['schema']
 
                 printable_fields = []
 
                 for field in schema:
-                    if projection.get(field, 0) == 1:
+                    if not projection or projection.get(field, 0) == 1:
                         printable_fields.append(field)
 
                 if len(printable_fields) == 0:
-                    printable_fields = schema
+                    printable_fields = schema.keys()
 
                 if records_format == 'csv':
                     result['records'] = convert_to_csv(result['records'], printable_fields)
@@ -200,6 +200,7 @@ class MongoDbController:
             else:
                 raise QueryNotFoundException('Unfortunately there is no query stored with PID {0}'.format(pid))
 
+        # TODO: refactor field generation (duplicate code in query_current_state and retrieve_stored_query)
         def query_current_state(self, resource_id, statement, projection, sort, offset, limit, distinct, include_total,
                                 records_format='objects'):
 
@@ -250,6 +251,21 @@ class MongoDbController:
             result['pid'] = pid
 
             schema = self.resource_fields(resource_id, timestamp)['schema']
+
+            printable_fields = []
+
+            for field in schema:
+                if not projection or projection.get(field, 0) == 1:
+                    printable_fields.append(field)
+
+            if len(printable_fields) == 0:
+                printable_fields = schema.keys()
+
+            if records_format == 'objects':
+                result['records'] = list(result['records'])
+            elif records_format == 'csv':
+                result['records'] = convert_to_csv(result['records'], printable_fields)
+
             schema_fields = []
             for field in schema.keys():
                 log.debug(field)
@@ -257,13 +273,6 @@ class MongoDbController:
                     schema_fields.append({'id': field, 'type': schema[field]})
 
             result['fields'] = schema_fields
-
-            if records_format == 'objects':
-                result['records'] = list(result['records'])
-            elif records_format == 'csv':
-                schema = self.resource_fields(resource_id)['schema']
-                fields = [field for field in schema.keys()]
-                result['records'] = convert_to_csv(result['records'], fields)
 
             return result
 
@@ -308,6 +317,7 @@ class MongoDbController:
 
             query = helper.JSONEncoder().encode(pipeline)
 
+            log.debug('submitted query: {0}'.format(history_stage + pipeline + pagination_stage))
             records = col.aggregate(history_stage + pipeline + pagination_stage)
 
             query_hash = calculate_hash(query)

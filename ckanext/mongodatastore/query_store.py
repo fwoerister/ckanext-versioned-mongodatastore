@@ -49,3 +49,11 @@ class QueryStore:
         Session = sessionmaker(bind=self.engine)
         session = Session()
         return session.query(Query.id).all()
+
+    def purge_query_store(self):
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+
+        session.query(Query).delete()
+
+        session.commit()
