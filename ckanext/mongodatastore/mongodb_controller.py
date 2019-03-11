@@ -3,6 +3,7 @@ import json
 import logging
 from StringIO import StringIO
 from collections import OrderedDict
+from json import JSONEncoder
 
 from bson import ObjectId
 from ckan.common import config
@@ -315,7 +316,7 @@ class MongoDbController:
                 else:
                     count = count[0]['count']
 
-            query = helper.JSONEncoder().encode(pipeline)
+            query = JSONEncoder().encode(pipeline)
 
             log.debug('submitted query: {0}'.format(history_stage + pipeline + pagination_stage))
             records = col.aggregate(history_stage + pipeline + pagination_stage)
