@@ -1,19 +1,10 @@
 import hashlib
-import json
 from collections import OrderedDict
-
-from bson import ObjectId
+from json import JSONEncoder
 
 CKAN_DATASTORE = 'CKAN_Datastore'
 
 HASH_ALGORITHM = hashlib.md5
-
-
-class JSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, ObjectId):
-            return str(o)
-        return json.JSONEncoder.default(self, o)
 
 
 def normalize_json(json_data, max_depth=3):
