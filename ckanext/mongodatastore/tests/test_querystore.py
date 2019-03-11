@@ -75,7 +75,7 @@ class QueryStoreTest(unittest.TestCase):
         for c in ids:
             self.assertEqual(c[0], pid)
 
-    def purge_query_store(self):
+    def test_purge_query_store(self):
         pid = self.querystore.store_query(TEST_RESOURCE_NAME, '{}', '5c86a1aaf6b1b8295695c666',
                                           'result_hash', 'query_hash', 'hash_algorithm')
 
