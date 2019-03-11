@@ -29,7 +29,6 @@ class MongodatastorePlugin(plugins.SingletonPlugin):
     def register_datasource(self):
         return {
             'postgres': PostgreSqlDatasource,
-            'mariadb': MariaDbDatasource
         }
 
     # IDatastoreBackend
