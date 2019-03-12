@@ -29,12 +29,15 @@ class MongodatastorePlugin(plugins.SingletonPlugin):
     def register_datasource(self):
         return {
             'postgres': PostgreSqlDatasource,
+	    'postgresql': PostgreSqlDatasource
         }
 
     # IDatastoreBackend
     def register_backends(self):
         return {
-            u'mongodb': MongoDataStoreBackend
+            u'mongodb': MongoDataStoreBackend,
+            u'mongodb+srv': MongoDataStoreBackend,
+
         }
 
     # IRoutes
