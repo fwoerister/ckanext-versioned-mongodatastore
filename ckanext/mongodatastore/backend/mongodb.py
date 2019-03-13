@@ -13,8 +13,7 @@ def raise_exeption(ex):
 
 
 def create_projection(schema, fields):
-    projection = {'_id': 0}
-
+    projection={}
     for field in schema.keys():
         if len(fields) == 0 or field in fields:
             projection[field] = 1
@@ -123,7 +122,7 @@ class MongoDataStoreBackend(DatastoreBackend):
 
     def upsert(self, context, data_dict):
         log.debug('mongo datastore is updated with parameters: {0}'.format(data_dict))
-        
+
         # Parameters specified by the Datastore API interface
         resource_id = data_dict.get(u'resource_id')
         force = data_dict.get(u'force', False)
@@ -152,7 +151,7 @@ class MongoDataStoreBackend(DatastoreBackend):
         # Parameters specified by the Datastore API interface
         resource_id = data_dict.get(u'resource_id')
         force = data_dict.get(u'force', False)
-        filters = data_dict.get('filters', None)
+        filters = data_dict.get('filters', {})
         calculate_record_count = data_dict.get(u'calculate_record_count', False)
 
         log_parameter_not_used_warning(
@@ -160,7 +159,7 @@ class MongoDataStoreBackend(DatastoreBackend):
 
         # WARNING: force has a different meaning here -> if force is true, the whole collection history is deleted,
         # which means, that citability is lost as well!
-        self.mongo_cntr.delete_resource(resource_id, filters, force=False)
+        self.mongo_cntr.delete_resource(resource_id, filters, force=force)
 
         return data_dict
 
