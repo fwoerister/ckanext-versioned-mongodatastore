@@ -300,6 +300,23 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(result_csv['records'], 'abc;0\r\nabc;1\r\ndef;2\r\nghi;3\r\n')
 
+    def test_query_by_id(self):
+        mongo_cntr = MongoDbController.getInstance()
+
+        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
+        mongo_cntr.upsert(self.RESOURCE_ID,
+                          copy.deepcopy(self.DATA_RECORD) + [
+                              {'field2': 123, 'field1': 'abc', 'distinct_field': 1, 'id': 0}], False)
+
+        result = mongo_cntr.query_current_state(self.RESOURCE_ID, {'id': 1},
+                                                {},
+                                                None, None, None,
+                                                False, True)
+
+        self.assertEqual(len(result['records']), 1)
+
+        self.assertEqual(result['records'][0], self.DATA_RECORD[0])
+
     def test_distinct_query(self):
         mongo_cntr = MongoDbController.getInstance()
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
