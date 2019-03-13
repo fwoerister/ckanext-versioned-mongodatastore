@@ -1,8 +1,5 @@
 import logging
-from collections import OrderedDict
 
-from ckan.common import request
-from ckan.logic import NotAuthorized
 from ckan.plugins.toolkit import (
     BaseController,
     ObjectNotFound,
@@ -10,16 +7,13 @@ from ckan.plugins.toolkit import (
     render,
     get_action,
     h,
-    url_for,
     response,
     abort,
     c)
-
 from ckanext.datastore.writer import csv_writer, json_writer, xml_writer
-from sqlalchemy import create_engine
 
 from ckanext.mongodatastore.datasource import DataSourceAdapter
-from ckanext.mongodatastore.mongodb_controller import QueryNotFoundException, IdMismatch
+from ckanext.mongodatastore.mongodb_controller import QueryNotFoundException
 
 log = logging.getLogger(__name__)
 
