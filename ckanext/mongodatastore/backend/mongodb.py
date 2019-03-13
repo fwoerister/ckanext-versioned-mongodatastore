@@ -1,8 +1,8 @@
 import logging
 
 from ckan.lib.base import abort
-
 from ckanext.datastore.backend import DatastoreBackend
+
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
 log = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ def raise_exeption(ex):
 
 
 def create_projection(schema, fields):
-    projection={}
+    projection = {}
     for field in schema.keys():
         if len(fields) == 0 or field in fields:
             projection[field] = 1
@@ -229,7 +229,7 @@ class MongoDataStoreBackend(DatastoreBackend):
     def resource_info(self, resource_id):
         return self.resource_fields(resource_id)
 
-        def resource_id_from_alias(self, alias):
+    def resource_id_from_alias(self, alias):
         if self.resource_exists(alias):
             return True, alias
         return False, alias
