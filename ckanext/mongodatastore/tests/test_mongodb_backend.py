@@ -106,5 +106,69 @@ class MongoDbBackendTest(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, self.backend.upsert, {}, data_dict)
 
+    def test_upsert_with_not_supported_operation_update(self):
+        data_dict = {
+            'resource_id': 'resource_123',
+            'force': True,
+            'records': [{'id': 1, 'name': 'florian', 'age': 27}],
+            'method': 'update'
+        }
+
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.assertRaises(NotImplementedError, self.backend.upsert, {}, data_dict)
+
     def test_delete(self):
-        pass
+        data_dict = {
+            'resource_id': 'resource_123'
+        }
+
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.delete({}, data_dict)
+
+        cntr_mock.delete_resource.assert_called_with('resource_123', {}, force=False)
+
+    def test_delete_with_filter(self):
+        data_dict = {
+            'resource_id': 'resource_123',
+            'filters': {'id': 2}
+        }
+
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.delete({}, data_dict)
+
+        cntr_mock.delete_resource.assert_called_with('resource_123', {'id': 2}, force=False)
+
+    def test_force_delete(self):
+        data_dict = {
+            'resource_id': 'resource_123',
+            'force': True
+        }
+
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.delete({}, data_dict)
+
+        cntr_mock.delete_resource.assert_called_with('resource_123', {}, force=True)
+
+    def test_search(self):
+        data_dict = {
+            'resource_id': 'resource_123',
+            'filters': {'name': 'florian', 'age': 20}
+        }
+
+        cntr_mock = MagicMock()
+        cntr_mock.query_current_state.return_value = {'fields': None, 'pid': 123}
+
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.search({}, data_dict)
+
+        cntr_mock.query_current_state.assert_called_with('resource_123', {'age': 20, 'name': 'florian'}, {}, None, 0,
+                                                         100, False, True, 'objects')
