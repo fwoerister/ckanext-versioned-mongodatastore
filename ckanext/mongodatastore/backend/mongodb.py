@@ -68,7 +68,6 @@ def transform_filter(filters, schema):
 def log_parameter_not_used_warning(param_list):
     for param in param_list:
         if param[1]:
-
             print(log)
 
             log.warn('The parameter {0} is set, but has no effect in this DataStore backend implementation!'.format(
@@ -124,7 +123,7 @@ class MongoDataStoreBackend(DatastoreBackend):
 
     def upsert(self, context, data_dict):
         log.debug('mongo datastore is updated with parameters: {0}'.format(data_dict))
-
+        
         # Parameters specified by the Datastore API interface
         resource_id = data_dict.get(u'resource_id')
         force = data_dict.get(u'force', False)
@@ -137,9 +136,9 @@ class MongoDataStoreBackend(DatastoreBackend):
             [('force', force), ('calculate_record_count', calculate_record_count)])
 
         operations = {
-            'insert': lambda _: raise_exeption(NotImplementedError()),
+            'insert': lambda a, b, c: raise_exeption(NotImplementedError()),
             'upsert': self.mongo_cntr.upsert,
-            'update': lambda _: raise_exeption(NotImplementedError())
+            'update': lambda a, b, c: raise_exeption(NotImplementedError())
         }
 
         upsert_operation = operations[method]
@@ -211,7 +210,7 @@ class MongoDataStoreBackend(DatastoreBackend):
         result = self.mongo_cntr.query_current_state(resource_id, statement, projection, sort, offset, limit, distinct,
                                                      include_total, records_format)
 
-        assert('fields' in result.keys())
+        assert ('fields' in result.keys())
 
         log.debug('id {0} assigned to currently executed search operation.'.format(result['pid']))
         return result
