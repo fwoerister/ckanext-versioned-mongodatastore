@@ -22,7 +22,7 @@ def create_projection(schema, fields):
     return projection
 
 
-def create_query_filter(query, schema):
+def transform_query_to_statement(query, schema):
     new_filter = {'$or': []}
 
     for field in schema.keys():
@@ -68,6 +68,9 @@ def transform_filter(filters, schema):
 def log_parameter_not_used_warning(param_list):
     for param in param_list:
         if param[1]:
+
+            print(log)
+
             log.warn('The parameter {0} is set, but has no effect in this DataStore backend implementation!'.format(
                 param[0]))
 
@@ -193,7 +196,7 @@ class MongoDataStoreBackend(DatastoreBackend):
         projection = create_projection(schema, fields)
 
         if query:
-            statement = create_query_filter(query, schema)
+            statement = transform_query_to_statement(query, schema)
         else:
             statement = transform_filter(filters, schema)
 
