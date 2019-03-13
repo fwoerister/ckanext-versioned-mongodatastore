@@ -212,6 +212,8 @@ class MongoDbBackendTest(unittest.TestCase):
         self.assertEqual(alias, 'alias')
 
         cntr_mock.resource_exists.return_value = False
+        
+        boolean_val, alias = self.backend.resource_id_from_alias('alias')
 
         self.assertFalse(boolean_val)
         self.assertEqual(alias, 'alias')
@@ -227,5 +229,5 @@ class MongoDbBackendTest(unittest.TestCase):
     def test_create_function(self):
         self.assertRaises(NotImplementedError, self.backend.create_function)
 
-    def test_delete_function(self):
-        self.assertRaises(NotImplementedError, self.backend.delete_function)
+    def test_drop_function(self):
+        self.assertRaises(NotImplementedError, self.backend.drop_function)
