@@ -4,8 +4,9 @@
 
 .. image:: https://travis-ci.org/fwoerister/ckanext-mongodatastore.svg?branch=master
     :target: https://travis-ci.org/fwoerister/ckanext-mongodatastore
-
-[![Coverage Status](https://coveralls.io/repos/github/fwoerister/ckanext-mongodatastore/badge.svg?branch=master)](https://coveralls.io/github/fwoerister/ckanext-mongodatastore?branch=master)
+    
+.. image:: https://coveralls.io/repos/github/fwoerister/ckanext-mongodatastore/badge.svg?branch=master
+:target: https://coveralls.io/github/fwoerister/ckanext-mongodatastore?branch=master
 
 .. image:: https://pypip.in/download/ckanext-mongodatastore/badge.svg
     :target: https://pypi.python.org/pypi//ckanext-mongodatastore/
