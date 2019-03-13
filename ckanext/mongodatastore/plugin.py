@@ -1,16 +1,12 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-
 from ckanext.datastore.interfaces import IDatastoreBackend
 
-from ckanext.mongodatastore.datasource import DataSourceAdapter
-from ckanext.mongodatastore.interfaces import IDataSourceAdapter
-
-from ckanext.mongodatastore.datasource.mariadb import MariaDbDatasource
-from ckanext.mongodatastore.datasource.postgresql import PostgreSqlDatasource
-
-from ckanext.mongodatastore.logic.action import querystore_resolve, datastore_restore
 from ckanext.mongodatastore.backend.mongodb import MongoDataStoreBackend
+from ckanext.mongodatastore.datasource import DataSourceAdapter
+from ckanext.mongodatastore.datasource.postgresql import PostgreSqlDatasource
+from ckanext.mongodatastore.interfaces import IDataSourceAdapter
+from ckanext.mongodatastore.logic.action import querystore_resolve, datastore_restore
 
 
 class MongodatastorePlugin(plugins.SingletonPlugin):
@@ -29,7 +25,7 @@ class MongodatastorePlugin(plugins.SingletonPlugin):
     def register_datasource(self):
         return {
             'postgres': PostgreSqlDatasource,
-	    'postgresql': PostgreSqlDatasource
+            'postgresql': PostgreSqlDatasource
         }
 
     # IDatastoreBackend
