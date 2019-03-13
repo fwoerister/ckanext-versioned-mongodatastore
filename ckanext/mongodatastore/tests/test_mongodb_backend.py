@@ -1,7 +1,8 @@
 import unittest
+
 from mock import patch, MagicMock
 
-from ckanext.mongodatastore.backend.mongodb import create_projection, raise_exeption, transform_query_to_statement, \
+from ckanext.mongodatastore.backend.mongodb import raise_exeption, transform_query_to_statement, \
     transform_filter, log_parameter_not_used_warning, MongoDataStoreBackend
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
@@ -172,3 +173,59 @@ class MongoDbBackendTest(unittest.TestCase):
 
         cntr_mock.query_current_state.assert_called_with('resource_123', {'age': 20, 'name': 'florian'}, {}, None, 0,
                                                          100, False, True, 'objects')
+
+    def test_search_sql(self):
+        self.assertRaises(NotImplementedError, self.backend.search_sql({}, {}))
+
+    def test_resource_exists(self):
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.resource_exists('resource_id')
+
+        cntr_mock.resource_exists.assert_called_with('resource_id')
+
+    def test_resource_info(self):
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.resource_fields('resource_id')
+
+        cntr_mock.resource_fields.assert_called_with('resource_id')
+
+    def test_resource_info(self):
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.resource_fields('resource_id')
+
+        cntr_mock.resource_fields.assert_called_with('resource_id')
+
+    def test_resource_id_from_alias(self):
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+        cntr_mock.resource_exists.return_value = True
+
+        boolean_val, alias = self.backend.resource_id_from_alias('alias')
+
+        self.assertTrue(boolean_val)
+        self.assertEqual(alias, 'alias')
+
+        cntr_mock.resource_exists.return_value = False
+
+        self.assertFalse(boolean_val)
+        self.assertEqual(alias, 'alias')
+
+    def test_get_all_ids(self):
+        cntr_mock = MagicMock()
+        self.backend.mongo_cntr = cntr_mock
+
+        self.backend.get_all_ids()
+
+        cntr_mock.get_all_ids.assert_called_once()
+
+    def test_create_function(self):
+        self.assertRaises(NotImplementedError, self.backend.create_function())
+
+    def test_delete_function(self):
+        self.assertRaises(NotImplementedError, self.backend.delete_function())
