@@ -229,7 +229,7 @@ class MongoDataStoreBackend(DatastoreBackend):
     def resource_info(self, resource_id):
         return self.resource_fields(resource_id)
 
-    def resource_id_from_alias(self, alias):
+        def resource_id_from_alias(self, alias):
         if self.resource_exists(alias):
             return True, alias
         return False, alias

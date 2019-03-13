@@ -175,7 +175,7 @@ class MongoDbBackendTest(unittest.TestCase):
                                                          100, False, True, 'objects')
 
     def test_search_sql(self):
-        self.assertRaises(NotImplementedError, self.backend.search_sql({}, {}))
+        self.assertRaises(NotImplementedError, self.backend.search_sql, {}, {})
 
     def test_resource_exists(self):
         cntr_mock = MagicMock()
@@ -225,7 +225,7 @@ class MongoDbBackendTest(unittest.TestCase):
         cntr_mock.get_all_ids.assert_called_once()
 
     def test_create_function(self):
-        self.assertRaises(NotImplementedError, self.backend.create_function())
+        self.assertRaises(NotImplementedError, self.backend.create_function)
 
     def test_delete_function(self):
-        self.assertRaises(NotImplementedError, self.backend.delete_function())
+        self.assertRaises(NotImplementedError, self.backend.delete_function)
