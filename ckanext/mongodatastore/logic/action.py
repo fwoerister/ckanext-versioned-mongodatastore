@@ -1,9 +1,5 @@
 import logging
 
-from ckan.common import config
-from pymongo import MongoClient
-from sqlalchemy import create_engine
-
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
 log = logging.getLogger(__name__)

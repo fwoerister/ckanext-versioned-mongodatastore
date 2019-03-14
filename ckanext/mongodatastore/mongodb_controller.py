@@ -9,7 +9,6 @@ from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
 
-from ckanext.mongodatastore import helper
 from ckanext.mongodatastore.helper import normalize_json, CKAN_DATASTORE, calculate_hash, HASH_ALGORITHM
 from ckanext.mongodatastore.query_store import QueryStore
 

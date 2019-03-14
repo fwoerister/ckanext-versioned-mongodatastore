@@ -1,7 +1,6 @@
+import copy
 import logging
 import unittest
-import copy
-from time import sleep
 
 from ckanext.mongodatastore.helper import CKAN_DATASTORE
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, \

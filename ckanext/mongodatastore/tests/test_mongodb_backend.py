@@ -212,7 +212,7 @@ class MongoDbBackendTest(unittest.TestCase):
         self.assertEqual(alias, 'alias')
 
         cntr_mock.resource_exists.return_value = False
-        
+
         boolean_val, alias = self.backend.resource_id_from_alias('alias')
 
         self.assertFalse(boolean_val)
