@@ -128,7 +128,7 @@ class MongoDatastoreController(BaseController):
         table = h.get_request_param('table')
         method = h.get_request_param('method')
 
-        # TODO: async import --> move import logic to a seperate ckan jobs
+        # TODO: async import --> move import logic to a seperate ckan job
         exists = True
         try:
             result = get_action('datastore_search')(None, {

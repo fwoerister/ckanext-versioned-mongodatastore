@@ -1,13 +1,13 @@
 import unittest
 
-from mock import MagicMock
+from mock import patch, MagicMock
 
 from ckanext.mongodatastore.logic.action import querystore_resolve
 
 
 class ActionTest(unittest.TestCase):
 
-    @mock.patch('ckanext.mongodatastore.mongodb_controller.MongoDbController.getInstance')
+    @patch('ckanext.mongodatastore.mongodb_controller.MongoDbController.getInstance')
     def test_querystore_resolve(self, get_instance_mock):
         mongodb_cntr_mock = MagicMock()
         get_instance_mock.return_value = mongodb_cntr_mock
@@ -18,7 +18,7 @@ class ActionTest(unittest.TestCase):
 
         mongodb_cntr_mock.retrieve_stored_query.assert_calle_with(123, offset=0, limit=100, records_format='list')
 
-    @mock.patch('ckanext.mongodatastore.mongodb_controller.MongoDbController.getInstance')
+    @patch('ckanext.mongodatastore.mongodb_controller.MongoDbController.getInstance')
     def test_querystore_resolve_default_values(self, get_instance_mock):
         mongodb_cntr_mock = MagicMock()
         get_instance_mock.return_value = mongodb_cntr_mock
