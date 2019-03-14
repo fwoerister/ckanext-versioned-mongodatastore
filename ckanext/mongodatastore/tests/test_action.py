@@ -16,7 +16,7 @@ class ActionTest(unittest.TestCase):
 
         querystore_resolve({}, data_dict)
 
-        mongodb_cntr_mock.retrieve_stored_query.assert_calle_with(123, offset=0, limit=100, records_format='list')
+        mongodb_cntr_mock.retrieve_stored_query.assert_called_with(123, offset=0, limit=100, records_format='list')
 
     @patch('ckanext.mongodatastore.mongodb_controller.MongoDbController.getInstance')
     def test_querystore_resolve_default_values(self, get_instance_mock):
@@ -27,5 +27,5 @@ class ActionTest(unittest.TestCase):
 
         querystore_resolve({}, data_dict)
 
-        mongodb_cntr_mock.retrieve_stored_query.assert_calle_with(123, offset=None, limit=None,
+        mongodb_cntr_mock.retrieve_stored_query.assert_called_with(123, offset=None, limit=None,
                                                                   records_format='objects')
