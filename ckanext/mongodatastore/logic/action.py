@@ -6,8 +6,6 @@ log = logging.getLogger(__name__)
 
 
 def querystore_resolve(context, data_dict):
-    log.debug('QUERYSTORE RESOLVE ----------------------------------------------------------------------------')
-
     cntr = MongoDbController.getInstance()
 
     pid = data_dict.get('pid')
