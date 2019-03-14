@@ -193,14 +193,6 @@ class MongoDbBackendTest(unittest.TestCase):
 
         cntr_mock.resource_fields.assert_called_with('resource_id')
 
-    def test_resource_info(self):
-        cntr_mock = MagicMock()
-        self.backend.mongo_cntr = cntr_mock
-
-        self.backend.resource_fields('resource_id')
-
-        cntr_mock.resource_fields.assert_called_with('resource_id')
-
     def test_resource_id_from_alias(self):
         cntr_mock = MagicMock()
         self.backend.mongo_cntr = cntr_mock
