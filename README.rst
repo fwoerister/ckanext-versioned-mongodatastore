@@ -9,7 +9,7 @@
    :target: https://coveralls.io/github/fwoerister/ckanext-mongodatastore?branch=master
 
 .. image:: https://pypip.in/download/ckanext-mongodatastore/badge.svg
-    :target: https://pypi.python.org/pypi//ckanext-mongodatastore/
+    :target: https://pypi.python.org/pypi/ckanext-mongodatastore/
     :alt: Downloads
 
 .. image:: https://pypip.in/version/ckanext-mongodatastore/badge.svg
