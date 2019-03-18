@@ -135,7 +135,7 @@ class MongoDbController:
             # TODO: store override information in meta entry
 
         # TODO: check if record has to be updated at all (in case it did not change, no update has to be performed)
-        def upsert(self, resource_id, records, dry_run):
+        def upsert(self, resource_id, records, dry_run=False):
             col, meta = self.__get_collections(resource_id)
 
             record_id_key = meta.find_one()['record_id']
