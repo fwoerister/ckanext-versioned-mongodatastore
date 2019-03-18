@@ -102,6 +102,9 @@ class MongoDatastoreController(BaseController):
                 None, {'id': id})
             c.resource = get_action('resource_show')(
                 None, {'id': resource_id})
+
+            log.debug("pkg: " + str(c.pkg_dict))
+            log.debug("res: " + str(c.resource))
         except (ObjectNotFound, NotAuthorized):
             abort(404, 'Resource not found')
 
@@ -128,7 +131,7 @@ class MongoDatastoreController(BaseController):
         table = h.get_request_param('table')
         method = h.get_request_param('method')
 
-        # TODO: async import --> move import logic to a seperate ckan job
+        # TODO: async import --> move import logic to a seperate ckan job if possible (?)
         exists = True
         try:
             result = get_action('datastore_search')(None, {
@@ -165,10 +168,12 @@ class MongoDatastoreController(BaseController):
                 h.flash_error(('The datastore already has the attribute "{0}" defined as record id. '
                                'Inserting records with the primary key attribute "{1}" failed.').format(
                     result['meta']['record_id'], pk))
+                h.redirect_to('/')
+                return
 
         datasource.migrate_records_to_datasource(table, resource['id'], method)
-        h.flash_success("Table {0} successfully imported into datastore".format(table))
 
+        h.flash_success("Table {0} successfully imported into datastore".format(table))
         h.redirect_to('/')
 
 
