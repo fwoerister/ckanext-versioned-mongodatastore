@@ -188,8 +188,6 @@ class QueryStoreController(BaseController):
         except QueryNotFoundException as ex:
             abort(404, 'Unfortunately there is no entry with pid {0} in the query store!'.format(id))
 
-        log.debug('############################################### {0}'.format(result['fields']))
-
         return render('mongodatastore/query_view.html', extra_vars={'query': result['query'],
                                                                     'result_set': result['records'],
                                                                     'count': len(result['records']),
