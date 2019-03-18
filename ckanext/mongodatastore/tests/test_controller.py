@@ -4,7 +4,7 @@ import StringIO
 from mock import patch, MagicMock
 
 import ckan
-from ckanext.mongodatastore.controller import history_dump_to, MongoDatastoreController
+from ckanext.mongodatastore.controller import history_dump_to, MongoDatastoreController, QueryStoreController
 
 mock_xml = MagicMock()
 mock_xml.side_effect = [{'limit': 1, 'fields': [{'id': 'name', 'type': 'string'}], 'records': [{'name': 'florian'}]},
@@ -282,3 +282,75 @@ class MongoDatastoreControllerTest(unittest.TestCase):
         h_mock.flash_error.assert_called()
         h_mock.flash_success.assert_not_called()
         h_mock.redirect_to.assert_called_with('/')
+
+
+class QueryStoreControllerTest(unittest.TestCase):
+
+    def setUp(self):
+        self.cntr = QueryStoreController()
+
+    @patch('ckanext.mongodatastore.controller.h')
+    @patch('ckanext.mongodatastore.controller.render')
+    @patch('ckanext.mongodatastore.controller.get_action')
+    def test_view_history_query(self, get_action_mock, render_mock, h_mock):
+
+        def get_param(name):
+            if name == 'id':
+                return 123
+            return None
+
+        def get_action(name):
+            if name == 'querystore_resolve':
+                return lambda c, d: {'records': [{'id': 1, 'name': 'florian'}], 'query': '[QUERY]',
+                                     'fields': ['id', 'name']}
+
+        h_mock.get_param_int.side_effect = get_param
+        get_action_mock.side_effect = get_action
+
+        self.cntr.view_history_query()
+
+        render_mock.assert_called_with('mongodatastore/query_view.html', extra_vars={'query': '[QUERY]',
+                                                                                     'result_set': [
+                                                                                         {'id': 1, 'name': 'florian'}],
+                                                                                     'count': 1,
+                                                                                     'projection': ['id', 'name']})
+
+    @patch('ckanext.mongodatastore.controller.h')
+    @patch('ckanext.mongodatastore.controller.history_dump_to')
+    @patch('ckanext.mongodatastore.controller.response')
+    def test_dump_history_result_set(self, response_mock, history_dump_to_mock, h_mock):
+        def get_param(name):
+            if name == 'id':
+                return '123'
+            if name == 'format':
+                return 'csv'
+            if name == 'offset':
+                return '0'
+            if name == 'limit':
+                return '100'
+            if name == 'bom':
+                return 'True'
+            return None
+
+        h_mock.get_request_param.side_effect = get_param
+        self.cntr.dump_history_result_set()
+
+        history_dump_to_mock.assert_called_with(123, response_mock, fmt='csv', offset=0, limit=100,
+                                                options={u'bom': True})
+
+    @patch('ckanext.mongodatastore.controller.h')
+    @patch('ckanext.mongodatastore.controller.history_dump_to')
+    @patch('ckanext.mongodatastore.controller.response')
+    def test_dump_history_result_set_default_settings(self, response_mock, history_dump_to_mock, h_mock):
+        def get_param(name):
+            if name == 'id':
+                return '123'
+            if name == 'format':
+                return 'csv'
+            return None
+
+        h_mock.get_request_param.side_effect = get_param
+        self.cntr.dump_history_result_set()
+
+        history_dump_to_mock.assert_called_with(123, response_mock, fmt='csv', offset=None, limit=None,
+                                                options={u'bom': False})
