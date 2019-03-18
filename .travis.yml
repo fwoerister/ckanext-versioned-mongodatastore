@@ -6,7 +6,7 @@ env:
 install:
     - bash bin/travis-build.bash
 services:
-    - postgresql
+    - postgresql: 9.3
     - mongodb
 script: sh bin/travis-run.sh
 after_success: coveralls
