@@ -40,7 +40,6 @@ def convert_to_csv(result_set, fields):
     return returnval
 
 
-# TODO: implement session handling + rollbacks in case of failed transactions
 class MongoDbController:
     def __init__(self):
         pass
@@ -57,10 +56,11 @@ class MongoDbController:
         def __get_collections(self, resource_id):
             col = self.datastore.get_collection(resource_id)
             meta = self.datastore.get_collection('{0}_meta'.format(resource_id))
-            return col, meta
+            fields = self.datastore.get_collection('{0}_fields'.format(resource_id))
+            return col, meta, fields
 
         def __get_max_id(self, resource_id):
-            col, _ = self.__get_collections(resource_id)
+            col, _, _ = self.__get_collections(resource_id)
             return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
 
         def __generate_history_group_expression(self, resource_id, timestamp):
@@ -77,6 +77,15 @@ class MongoDbController:
             expression['_deleted'] = {'$last': '$_deleted'}
             return expression
 
+        def __update_required(self, resource_id, new_record, id_key):
+            col, meta, _ = self.__get_collections(resource_id)
+
+            old_record = col.find_one({id_key: new_record[id_key]}, {'_id': 0})
+
+            if old_record:
+                return old_record != new_record
+            return True
+
         def get_all_ids(self):
             return [name for name in self.datastore.list_collection_names() if not name.endswith('_meta')]
 
@@ -88,7 +97,6 @@ class MongoDbController:
                 self.datastore.create_collection(resource_id)
                 self.datastore.create_collection('{0}_meta'.format(resource_id))
 
-            log.debug('record entry added')
             self.datastore.get_collection('{0}_meta'.format(resource_id)).insert_one({'record_id': primary_key})
 
         def delete_resource(self, resource_id, filters={}, force=False):
@@ -103,7 +111,7 @@ class MongoDbController:
                     col.insert_one({'id': id_to_delete['id'], '_deleted': True})
 
         def update_datatypes(self, resource_id, fields):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, field_collection = self.__get_collections(resource_id)
 
             timestamp = self.__get_max_id(resource_id)
 
@@ -132,11 +140,12 @@ class MongoDbController:
                                                                                                     record[record_id],
                                                                                                     resource_id))
                 self.upsert(resource_id, [record], False)
-            # TODO: store override information in meta entry
 
-        # TODO: check if record has to be updated at all (in case it did not change, no update has to be performed)
+            for field in fields:
+                field_collection.insert_one(field)
+
         def upsert(self, resource_id, records, dry_run=False):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             record_id_key = meta.find_one()['record_id']
 
@@ -149,7 +158,8 @@ class MongoDbController:
 
             for record in records:
                 if not dry_run:
-                    col.insert_one(record)
+                    if self.__update_required(resource_id, record, record_id_key):
+                        col.insert_one(record)
 
         def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)
@@ -277,7 +287,7 @@ class MongoDbController:
             return result
 
         def __query(self, resource_id, pipeline, timestamp, offset, limit, include_total):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             history_stage = [
                 # remove documents, that were created after the timestamp
@@ -338,7 +348,7 @@ class MongoDbController:
             return result
 
         def resource_fields(self, resource_id, timestamp=None):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             pipeline = []
 
@@ -360,7 +370,7 @@ class MongoDbController:
                 result = result[0]
                 for key in sorted(result['keys']):
                     if key not in ['_id', 'valid_to', 'id', '_deleted']:
-                        schema[key] = 'string'  # TODO: guess data type
+                        schema[key] = 'string'
                     if key == 'id':
                         schema['id'] = 'number'
             else:
