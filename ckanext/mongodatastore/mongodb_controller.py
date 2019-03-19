@@ -56,10 +56,11 @@ class MongoDbController:
         def __get_collections(self, resource_id):
             col = self.datastore.get_collection(resource_id)
             meta = self.datastore.get_collection('{0}_meta'.format(resource_id))
-            return col, meta
+            fields = self.datastore.get_collection('{0}_fields'.format(resource_id))
+            return col, meta, fields
 
         def __get_max_id(self, resource_id):
-            col, _ = self.__get_collections(resource_id)
+            col, _, _ = self.__get_collections(resource_id)
             return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
 
         def __generate_history_group_expression(self, resource_id, timestamp):
@@ -77,7 +78,7 @@ class MongoDbController:
             return expression
 
         def __update_required(self, resource_id, new_record, id_key):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             old_record = col.find_one({id_key: new_record[id_key]}, {'_id': 0})
 
@@ -110,7 +111,7 @@ class MongoDbController:
                     col.insert_one({'id': id_to_delete['id'], '_deleted': True})
 
         def update_datatypes(self, resource_id, fields):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, field_collection = self.__get_collections(resource_id)
 
             timestamp = self.__get_max_id(resource_id)
 
@@ -139,10 +140,12 @@ class MongoDbController:
                                                                                                     record[record_id],
                                                                                                     resource_id))
                 self.upsert(resource_id, [record], False)
-            # TODO: store override information in meta entry
+
+            for field in fields:
+                field_collection.insert_one(field)
 
         def upsert(self, resource_id, records, dry_run=False):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             record_id_key = meta.find_one()['record_id']
 
@@ -284,7 +287,7 @@ class MongoDbController:
             return result
 
         def __query(self, resource_id, pipeline, timestamp, offset, limit, include_total):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             history_stage = [
                 # remove documents, that were created after the timestamp
@@ -345,7 +348,7 @@ class MongoDbController:
             return result
 
         def resource_fields(self, resource_id, timestamp=None):
-            col, meta = self.__get_collections(resource_id)
+            col, meta, _ = self.__get_collections(resource_id)
 
             pipeline = []
 
@@ -367,7 +370,7 @@ class MongoDbController:
                 result = result[0]
                 for key in sorted(result['keys']):
                     if key not in ['_id', 'valid_to', 'id', '_deleted']:
-                        schema[key] = 'string'  # TODO: guess data type
+                        schema[key] = 'string'
                     if key == 'id':
                         schema['id'] = 'number'
             else:
