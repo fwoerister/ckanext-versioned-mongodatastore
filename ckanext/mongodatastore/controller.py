@@ -33,9 +33,8 @@ def history_dump_to(pid, output, fmt, offset, limit, options):
     elif fmt == 'xml':
         writer_factory = xml_writer
         records_format = 'objects'
-
     else:
-        abort(501, 'Only dump to csv file supported!')
+        abort(501, 'Only dump to csv, json or xml file supported!')
 
     def start_writer(fields):
         bom = options.get(u'bom', False)
