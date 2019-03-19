@@ -54,5 +54,20 @@ class PostgreSqlDatasourceTest(unittest.TestCase):
                                               'method': 'upsert',
                                               'calculate_record_count': False})
 
+    @patch('ckanext.mongodatastore.datasource.postgresql.get_action')
+    @patch('ckanext.mongodatastore.datasource.postgresql.c')
+    def test_migrate_records_to_datasource_with_empty_table(self, c_mock, get_action_mock):
+        upsert_mock = MagicMock()
+
+        def action(name):
+            if name == 'datastore_upsert':
+                return upsert_mock
+
+        get_action_mock.side_effect = action
+
+        self.datasource.migrate_records_to_datasource('dummy_data', 123, 'upsert')
+
+        upsert_mock.assert_not_called()
+
     def test_get_protocol(self):
         self.assertEqual(self.datasource.get_protocol(), 'postgresql')

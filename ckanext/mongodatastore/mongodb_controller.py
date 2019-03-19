@@ -40,7 +40,6 @@ def convert_to_csv(result_set, fields):
     return returnval
 
 
-# TODO: implement session handling + rollbacks in case of failed transactions
 class MongoDbController:
     def __init__(self):
         pass
@@ -77,6 +76,15 @@ class MongoDbController:
             expression['_deleted'] = {'$last': '$_deleted'}
             return expression
 
+        def __update_required(self, resource_id, new_record, id_key):
+            col, meta = self.__get_collections(resource_id)
+
+            old_record = col.find_one({id_key: new_record[id_key]}, {'_id': 0})
+
+            if old_record:
+                return old_record != new_record
+            return True
+
         def get_all_ids(self):
             return [name for name in self.datastore.list_collection_names() if not name.endswith('_meta')]
 
@@ -88,7 +96,6 @@ class MongoDbController:
                 self.datastore.create_collection(resource_id)
                 self.datastore.create_collection('{0}_meta'.format(resource_id))
 
-            log.debug('record entry added')
             self.datastore.get_collection('{0}_meta'.format(resource_id)).insert_one({'record_id': primary_key})
 
         def delete_resource(self, resource_id, filters={}, force=False):
@@ -134,7 +141,6 @@ class MongoDbController:
                 self.upsert(resource_id, [record], False)
             # TODO: store override information in meta entry
 
-        # TODO: check if record has to be updated at all (in case it did not change, no update has to be performed)
         def upsert(self, resource_id, records, dry_run=False):
             col, meta = self.__get_collections(resource_id)
 
@@ -149,7 +155,8 @@ class MongoDbController:
 
             for record in records:
                 if not dry_run:
-                    col.insert_one(record)
+                    if self.__update_required(resource_id, record, record_id_key):
+                        col.insert_one(record)
 
         def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)

@@ -29,6 +29,7 @@ class MongoDbControllerTest(unittest.TestCase):
         self.DATA_RECORD_CSV = "1;abc;123;1\r\n1;def;456;2\r\n1;ghi;456;3\r\n"
 
         self.DATA_RECORD_UPDATE = [
+            {u'id': 1, u'field1': u'abc', u'field2': 123, 'distinct_field': 1},
             {u'id': 3, u'field1': u'new_value', u'field2': 321, 'distinct_field': 1},
             {u'id': 4, u'field1': u'jkl', u'field2': 432, 'distinct_field': 2}
         ]
@@ -183,6 +184,8 @@ class MongoDbControllerTest(unittest.TestCase):
                                                       'distinct_field': 1},
                                                      {u'id': 4, u'field1': u'jkl', u'field2': 432,
                                                       'distinct_field': 2}])
+
+        self.assertEqual(mongo_cntr.datastore.get_collection(self.RESOURCE_ID).count(), 5)
 
     def test_upsert_records_with_no_id(self):
         mongo_cntr = MongoDbController.getInstance()
