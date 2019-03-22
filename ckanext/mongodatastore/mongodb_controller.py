@@ -19,8 +19,7 @@ class MongoDbControllerException(Exception):
     pass
 
 
-class IdMismatch(MongoDbControllerException):<<<<<<< HEAD
-
+class IdMismatch(MongoDbControllerException):
     pass
 
 
