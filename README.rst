@@ -29,9 +29,9 @@
 ckanext-mongodatastore
 ======================
 
-The MongoDatastore is a implementation of the DatastoreBackend interface, provided by the Datastore plugin.
-Providing cite-ability of evolving data is the main goal of this work.
+The MongoDatastore is a datastore implementation for CKAN, that uses MongoDB for storing data records. One aspect of this implementation is, that it follows the `RDA recommendations for Data Citation <https://doi.org/10.15497/RDA00016>`_. This guarantiees citability for every query that is submited to this datastore implementation. _rdaRecommendations
 
+As this extension provides an implementation of the IDatastoreBackend, the DataStore API can be used as before.
 
 ------------
 Requirements
