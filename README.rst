@@ -72,12 +72,7 @@ Config Settings
 ---------------
 For running the MongoDb datastore two settings have to configured in your CKAN's configuration file:
 
-    # set the datastore write url to your new MongoDB datastore
-    
     ckan.datastore.write_url = mongodb://[datastorehost]:27017
-    
-    # this configuration defines the URL of your querystore database
-    
     ckan.querystore.url = [URL to your query store database]
 
 
