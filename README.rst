@@ -29,18 +29,19 @@
 ckanext-mongodatastore
 ======================
 
-The MongoDatastore is a datastore implementation for CKAN, that uses MongoDB for storing data records. One aspect of this implementation is, that it follows the `RDA recommendations for Data Citation <https://doi.org/10.15497/RDA00016>`_. This guarantiees citability for every query that is submited to this datastore implementation.
+The MongoDatastore is a datastore implementation for CKAN, that uses MongoDB for storing data records. One aspect of this implementation is, that it follows the `RDA Recommendations for Data Citation <https://doi.org/10.15497/RDA00016>`_. This guarantiees citability for every query that is submited to this datastore implementation.
 
 .. image:: images/BigPicture.png
 
-As this extension provides an implementation of the `IDatastoreBackend <https://docs.ckan.org/en/latest/maintaining/datastore.html#extending-datastore>`_, the DataStore API can be used as before.
+As this extension provides an implementation of the `IDatastoreBackend <https://docs.ckan.org/en/latest/maintaining/datastore.html#extending-datastore>`_, therefore the DataStore API can be used as before.
 
 ------------
 Requirements
 ------------
 
-To run this plugin, a CKAN instance already has to be installed. In addition to the PostgreSQL database a MongoDB
-instance is required. To retrieve the PIDs in the UI, the CKAN plugin 'datacitator' has to be installed
+This CKAN extension is tested on CKAN 2.7 running on Python 2.7.
+
+To run this plugin beside an CKAN instance a MongoDB and a PostgreDB instance is required. The MongoDB is needed for storing the data records and the Postgre instance is used as a QueryStore, descriped in the RDA Recommendations. For both instances a connection string has to be set in the CKAN config file.
 
 ------------
 Installation
@@ -52,19 +53,30 @@ Installation
 
 To install ckanext-mongodatastore:
 
-1. Activate your CKAN virtual environment, for example::
+1. `Install MongoDB <https://docs.mongodb.com/manual/installation/> `_
+
+2. If not already existing, a QueryStore database has to be created::
+
+     sudo -u postgres createuser -S -D -R -P querystore
+     sudo -u postgres createdb -O querystore querystore -E utf-8
+
+3. Activate your CKAN virtual environment, for example::
 
      . /usr/lib/ckan/default/bin/activate
 
-2. Install the ckanext-mongodatastore Python package into your virtual environment::
+4. Install the ckanext-mongodatastore Python package into your virtual environment::
 
      pip install ckanext-mongodatastore
 
-3. Add ``mongodatastore`` to the ``ckan.plugins`` setting in your CKAN
+5. Set the ckanext-mongodatastore specific config settings the CKAN configuration file 
+   (by default the config file is located at
+   ``/etc/ckan/default/production.ini``).
+
+5. Add ``mongodatastore`` to the ``ckan.plugins`` setting in your CKAN
    config file (by default the config file is located at
    ``/etc/ckan/default/production.ini``).
 
-4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu::
+6. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu::
 
      sudo service apache2 reload
 
