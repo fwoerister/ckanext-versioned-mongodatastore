@@ -33,7 +33,7 @@ The MongoDatastore is a datastore implementation for CKAN, that uses MongoDB for
 
 .. image:: images/BigPicture.png
 
-*As this extension provides an implementation of the `IDatastoreBackend <https://docs.ckan.org/en/latest/maintaining/datastore.html#extending-datastore>`_, therefore the DataStore API can be used as before.*
+*As this extension provides an implementation of the* `IDatastoreBackend <https://docs.ckan.org/en/latest/maintaining/datastore.html#extending-datastore>`_, *therefore the DataStore API can be used as before.*
 
 ------------
 Requirements
