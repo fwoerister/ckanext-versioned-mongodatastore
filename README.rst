@@ -53,7 +53,7 @@ Installation
 
 To install ckanext-mongodatastore:
 
-1. `Install MongoDB <https://docs.mongodb.com/manual/installation/> `_
+1. `Install MongoDB <https://docs.mongodb.com/manual/installation/>`_
 
 2. If not already existing, a QueryStore database has to be created::
 
