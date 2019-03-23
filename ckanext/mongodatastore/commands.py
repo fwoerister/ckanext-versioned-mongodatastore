@@ -55,23 +55,9 @@ def check_integrity(ctx, config):
 
     stop = datetime.utcnow()
 
-    print('integrity check stopped after {0}'.format((stop - start).total_seconds()))
+    print('integrity check stopped after {0} seconds'.format((stop - start).total_seconds()))
     print('{0} problems detected'.format(len(error_list)))
     if len(error_list) > 0:
         print('The following PIDs do not retrieve a valid result set:')
         for pid in error_list:
             print(pid)
-
-
-@querystore_group.command(
-    u'check_integrity',
-    help=u'check if every query result matches the according hash value')
-@click.help_option(u'-h', u'--help')
-@click_config_option
-@click.pass_context
-def integration_test(ctx, test_datastore, test_querystore):
-    print('####################################')
-    print('# Start testing the mongodatastore #')
-    print('####################################')
-
-    # TODO: implement szenario, that performs all szenarios + verification
