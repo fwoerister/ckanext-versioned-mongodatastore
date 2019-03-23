@@ -35,7 +35,7 @@ The MongoDatastore is a datastore implementation for `CKAN <https://www.ckan.org
 
 *As this extension provides an implementation of the* `IDatastoreBackend <https://docs.ckan.org/en/latest/maintaining/datastore.html#extending-datastore>`_, *therefore the DataStore API can be used as before.*
 
-*Although after installation of this extension the resultsets will contain a PID, the resource view needs to be able to show this PID in the UI. The default DataExplorer is not capable of showing PIDs, please checkout my PoC implementation on `github <https://github.com/fwoerister/ckanext-datacitator>`_*
+*Although after installation of this extension the result sets will contain a PID, the resource view needs to be able to show this PID in the UI. The default DataExplorer is not capable of showing PIDs, please checkout my PoC implementation on `github <https://github.com/fwoerister/ckanext-datacitator>`_*
 
 ------------
 Requirements
