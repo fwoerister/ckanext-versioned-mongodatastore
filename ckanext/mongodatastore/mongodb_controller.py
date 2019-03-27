@@ -5,6 +5,7 @@ from StringIO import StringIO
 from collections import OrderedDict
 from json import JSONEncoder
 
+import pymongo
 from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
@@ -40,6 +41,45 @@ def convert_to_csv(result_set, fields):
     return returnval
 
 
+def create_history_stage(fields, timestamp, id_key='id'):
+    group_expression = OrderedDict()
+    group_expression['_id'] = '${0}'.format(id_key)
+
+    for key in fields:
+        if key not in ['_id']:
+            group_expression[key] = {'$last': '${0}'.format(key)}
+
+    group_expression['_deleted'] = {'$last': '$_deleted'}
+
+    history_stage = []
+    if timestamp:
+        history_stage = [
+            # remove documents, that were created after the timestamp
+            {'$match': {'_id': {'$lte': ObjectId(timestamp)}}}]
+
+    # get the latest versions of each id
+    history_stage.append({'$group': group_expression})
+    # remove documents, that have already been deleted
+    history_stage.append({'$match': {'_deleted': {'$not': {'$eq': True}}}})
+    # remove history related attributes
+    history_stage.append({'$project': {'_id': 0, '_deleted': 0}})
+
+    return history_stage
+
+
+def fetch_latest_field_infos(field_collection, key, timestamp=None):
+    history_stage = create_history_stage(['id', 'type', 'info'], timestamp, key)
+
+    field_infos = {}
+
+    for field in field_collection.aggregate(history_stage):
+        if '_id' in field:
+            field.pop('_id')
+        field_infos[field['id']] = field
+
+    return field_infos
+
+
 class MongoDbController:
     def __init__(self):
         pass
@@ -61,21 +101,13 @@ class MongoDbController:
 
         def __get_max_id(self, resource_id):
             col, _, _ = self.__get_collections(resource_id)
-            return list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))[0]['max_id']
 
-        def __generate_history_group_expression(self, resource_id, timestamp):
-            expression = OrderedDict()
-            expression['_id'] = '$id'
+            max_id_results = list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))
 
-            fields = self.resource_fields(resource_id, timestamp)
-            fields = fields['schema']
-
-            for key in fields:
-                if key not in ['_id']:
-                    expression[key] = {'$last': '${0}'.format(key)}
-
-            expression['_deleted'] = {'$last': '$_deleted'}
-            return expression
+            if len(max_id_results) == 0:
+                return None
+            else:
+                return max_id_results[0]['max_id']
 
         def __update_required(self, resource_id, new_record, id_key):
             col, meta, _ = self.__get_collections(resource_id)
@@ -130,15 +162,21 @@ class MongoDbController:
             }
 
             override_fields = [{'id': field['id'], 'new_type': field['info']['type_override']} for field in fields if
-                               len(field['info']['type_override']) > 0]
+                               'info' in field.keys() and field['info'] is not None and 'type_override' in field[
+                                   'info'].keys()]
+
             for record in result['records']:
+
                 for field in override_fields:
                     try:
                         record[field['id']] = converter[field['new_type']](record[field['id']])
+                        log.debug('Could convert field {0} of record {1} in resource {2}'.format(field['id'],
+                                                                                                 record[record_id],
+                                                                                                 resource_id))
                     except ValueError:
-                        log.warn('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
-                                                                                                    record[record_id],
-                                                                                                    resource_id))
+                        log.debug('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
+                                                                                                     record[record_id],
+                                                                                                     resource_id))
                 self.upsert(resource_id, [record], False)
 
             for field in fields:
@@ -180,31 +218,26 @@ class MongoDbController:
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
                 projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']
 
-                schema = self.resource_fields(q.resource_id, q.timestamp)['schema']
+                stored_field_info = list(self.resource_fields(q.resource_id, q.timestamp)['schema'])
 
-                printable_fields = []
-
-                for field in schema:
-                    if not projection or projection.get(field, 0) == 1:
-                        printable_fields.append(field)
-
-                if len(printable_fields) == 0:
-                    printable_fields = schema.keys()
-
-                if records_format == 'csv':
-                    result['records'] = convert_to_csv(result['records'], printable_fields)
+                if projection and len([k for k in projection.keys() if projection[k] != 0]) != 0:
+                    fields = [field for field in stored_field_info if field['id'] in projection.keys()]
                 else:
+                    fields = stored_field_info
+
+                field_names = [field['id'] for field in fields]
+
+                result['fields'] = fields
+
+                if records_format == 'objects':
                     result['records'] = list(result['records'])
+                elif records_format == 'csv':
 
-                schema_fields = []
-                for field in schema.keys():
-                    log.debug(field)
-                    if not projection or (field in projection and projection[field] == 1):
-                        schema_fields.append({'id': field, 'type': schema[field]})
+                    log.debug(fields)
+                    log.debug(projection)
+                    log.debug(stored_field_info)
 
-                result['fields'] = schema_fields
-
-                log.debug('schema fields {0}'.format(schema_fields))
+                    result['records'] = convert_to_csv(result['records'], field_names)
 
                 return result
             else:
@@ -215,6 +248,10 @@ class MongoDbController:
                                 records_format='objects'):
 
             timestamp = self.__get_max_id(resource_id)
+            field_timestamp = self.__get_max_id('{0}_fields'.format(resource_id))
+
+            if field_timestamp > timestamp:
+                timestamp = field_timestamp
 
             if sort is None:
                 sort = [{'id': 1}]
@@ -245,12 +282,10 @@ class MongoDbController:
                         sort_dict[field] = 1
                 sort_dict['id'] = 1
 
-                log.debug('$group stage: {0}'.format(group_expr))
                 pipeline.append(group_expr)
                 pipeline.append({'$sort': sort_dict})
 
             if projection:
-                log.debug('projection: {0}'.format(projection))
                 pipeline.append({'$project': projection})
 
             result = self.__query(resource_id, pipeline, timestamp, offset, limit, include_total)
@@ -260,49 +295,33 @@ class MongoDbController:
 
             result['pid'] = pid
 
-            schema = self.resource_fields(resource_id, timestamp)['schema']
+            stored_field_info = self.resource_fields(resource_id, timestamp)['schema']
 
-            printable_fields = []
+            if projection:
+                fields = [field for field in stored_field_info if field['id'] in projection.keys()]
+            else:
+                fields = stored_field_info
 
-            for field in schema:
-                if not projection or projection.get(field, 0) == 1:
-                    printable_fields.append(field)
+            field_names = [field['id'] for field in fields]
 
-            if len(printable_fields) == 0:
-                printable_fields = schema.keys()
+            result['fields'] = fields
 
             if records_format == 'objects':
                 result['records'] = list(result['records'])
             elif records_format == 'csv':
-                result['records'] = convert_to_csv(result['records'], printable_fields)
-
-            schema_fields = []
-            for field in schema.keys():
-                log.debug(field)
-                if not projection or (field in projection and projection[field] == 1):
-                    schema_fields.append({'id': field, 'type': schema[field]})
-
-            result['fields'] = schema_fields
+                result['records'] = convert_to_csv(result['records'], field_names)
 
             return result
 
         def __query(self, resource_id, pipeline, timestamp, offset, limit, include_total):
             col, meta, _ = self.__get_collections(resource_id)
 
-            history_stage = [
-                # remove documents, that were created after the timestamp
-                {'$match': {'_id': {'$lte': timestamp}}},
+            resource_fields = self.resource_fields(resource_id, timestamp)
+            schema = resource_fields['schema']
+            id_key = resource_fields['meta']['record_id']
+            field_ids = [field['id'] for field in schema]
 
-                # get the latest versions of each id
-                {'$group': self.__generate_history_group_expression(resource_id, timestamp)},
-
-                # remove documents, that have already been deleted
-                {'$match': {'_deleted': {'$not': {'$eq': True}}}},
-
-                # remove history related attributes
-                {'$project': {'_id': 0, '_deleted': 0}}
-            ]
-
+            history_stage = create_history_stage(field_ids, timestamp, id_key)
             pagination_stage = []
 
             if offset and offset > 0:
@@ -327,7 +346,6 @@ class MongoDbController:
 
             query = JSONEncoder().encode(pipeline)
 
-            log.debug('submitted query: {0}'.format(history_stage + pipeline + pagination_stage))
             records = col.aggregate(history_stage + pipeline + pagination_stage)
 
             query_hash = calculate_hash(query)
@@ -347,34 +365,40 @@ class MongoDbController:
 
             return result
 
-        def resource_fields(self, resource_id, timestamp=None):
-            col, meta, _ = self.__get_collections(resource_id)
+        def resource_fields(self, resource_id, timestamp=None, show_all=False):
+            col, meta, fields = self.__get_collections(resource_id)
 
-            pipeline = []
+            meta_entry = meta.find_one()
 
-            if timestamp:
-                pipeline = [
-                    {'$match': {'_id': {'$lte': ObjectId(timestamp)}}}
-                ]
-            pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
-            pipeline.append({'$unwind': '$arrayofkeyvalue'})
-            pipeline.append({'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}})
+            schema = []
 
-            result = col.aggregate(pipeline)
+            stored_field_infos = fetch_latest_field_infos(fields, 'id', timestamp)
 
-            schema = OrderedDict()
+            if show_all:
+                pipeline = []
 
-            result = list(result)
+                if timestamp:
+                    pipeline = [{'$match': {'_id': {'$lte': timestamp}}}]
+                pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
+                pipeline.append({'$unwind': '$arrayofkeyvalue'})
+                pipeline.append({'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}})
 
-            if len(result) > 0:
-                result = result[0]
-                for key in sorted(result['keys']):
-                    if key not in ['_id', 'valid_to', 'id', '_deleted']:
-                        schema[key] = 'string'
-                    if key == 'id':
-                        schema['id'] = 'number'
+                result = col.aggregate(pipeline)
+                result = list(result)
+
+                if len(result) > 0:
+                    result = result[0]
+                    for key in sorted(result['keys']):
+                        if key not in ['_id', 'valid_to', 'id', '_deleted']:
+                            if key in stored_field_infos.keys():
+                                schema.append(stored_field_infos[key])
+                            else:
+                                schema.apend({'id': key, 'type': 'text'})
+                else:
+                    schema.append({'id': meta_entry['record_id'], 'type': 'number'})
             else:
-                schema['id'] = 'number'
+                for key in sorted(stored_field_infos.keys()):
+                    schema.append(stored_field_infos[key])
 
             result = {u'schema': schema, u'meta': meta.find_one()}
 
