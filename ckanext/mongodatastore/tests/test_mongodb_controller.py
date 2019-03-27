@@ -269,11 +269,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
-
-        for f in self.FIELDS:
-            if '_id' in f.keys():
-                f.pop('_id')
+        mongo_cntr.update_datatypes(self.RESOURCE_ID, copy.deepcopy(self.FIELDS))
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 

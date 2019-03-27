@@ -165,9 +165,6 @@ class MongoDbController:
                                'info' in field.keys() and field['info'] is not None and 'type_override' in field[
                                    'info'].keys()]
 
-            log.debug(fields)
-            log.debug('override_fields')
-            log.debug(override_fields)
             for record in result['records']:
 
                 for field in override_fields:
@@ -223,7 +220,7 @@ class MongoDbController:
 
                 stored_field_info = list(self.resource_fields(q.resource_id, q.timestamp)['schema'])
 
-                if projection:
+                if projection and len([k for k in projection.keys() if projection[k] != 0]) != 0:
                     fields = [field for field in stored_field_info if field['id'] in projection.keys()]
                 else:
                     fields = stored_field_info
@@ -235,6 +232,11 @@ class MongoDbController:
                 if records_format == 'objects':
                     result['records'] = list(result['records'])
                 elif records_format == 'csv':
+
+                    log.debug(fields)
+                    log.debug(projection)
+                    log.debug(stored_field_info)
+
                     result['records'] = convert_to_csv(result['records'], field_names)
 
                 return result
@@ -250,8 +252,6 @@ class MongoDbController:
 
             if field_timestamp > timestamp:
                 timestamp = field_timestamp
-
-            log.debug('max timestamp is {0}'.format(timestamp))
 
             if sort is None:
                 sort = [{'id': 1}]
@@ -282,12 +282,10 @@ class MongoDbController:
                         sort_dict[field] = 1
                 sort_dict['id'] = 1
 
-                log.debug('$group stage: {0}'.format(group_expr))
                 pipeline.append(group_expr)
                 pipeline.append({'$sort': sort_dict})
 
             if projection:
-                log.debug('projection: {0}'.format(projection))
                 pipeline.append({'$project': projection})
 
             result = self.__query(resource_id, pipeline, timestamp, offset, limit, include_total)
@@ -348,7 +346,6 @@ class MongoDbController:
 
             query = JSONEncoder().encode(pipeline)
 
-            log.debug('submitted query: {0}'.format(history_stage + pipeline + pagination_stage))
             records = col.aggregate(history_stage + pipeline + pagination_stage)
 
             query_hash = calculate_hash(query)
