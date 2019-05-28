@@ -198,6 +198,7 @@ class MongoDbController:
                 if not dry_run:
                     if self.__update_required(resource_id, record, record_id_key):
                         col.insert_one(record)
+                        record.pop('_id')
 
         def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)

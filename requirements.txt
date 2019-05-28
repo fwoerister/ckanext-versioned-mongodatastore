@@ -2,3 +2,4 @@ bson
 pytz
 pymongo
 ckanext
+locust
