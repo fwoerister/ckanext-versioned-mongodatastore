@@ -4,7 +4,7 @@ import random
 
 LOADTEST_USER = 'fwoerister'
 LOADTEST_API_KEY = '2fffc74c-85f2-47c3-8c9e-36dbd3724272'
-LOADTEST_RESOURCE_ID = 'a0619eef-b0ea-4baf-9d2c-8163732f8ae3'
+LOADTEST_RESOURCE_ID = '77a9f8bf-1775-4862-8072-ff7b6bbb46cb'
 LOADTEST_OWNER_ORG = 'tu-wien'
 
 SCHEMA_FIELDS = ["id", "class",
@@ -80,7 +80,6 @@ class ContentPublisher(TaskSet):
         headers = {'Authorization': LOADTEST_API_KEY,
                    'content-type': 'application/json'}
 
-        print(payload)
         self.client.post("/api/3/action/datastore_search", data=payload, headers=headers)
 
 

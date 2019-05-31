@@ -72,7 +72,7 @@ def history_dump_to(pid, output, fmt, offset, limit, options):
                 log.debug('limit is not None and limit <= 0')
                 break
 
-            records = result['records']
+            records = list(result['records'])
 
             log.debug("writing: {0}".format(records))
             wr.write_records(records)

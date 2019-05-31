@@ -6,7 +6,7 @@ from ckanext.mongodatastore.backend.mongodb import raise_exeption, transform_que
     transform_filter, log_parameter_not_used_warning, MongoDataStoreBackend
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
-SCHEMA = {'age': 'number', 'id': 'number', 'name': 'string'}
+SCHEMA = [{'id': 'age', 'type': 'number'}, {'id': 'id', 'type': 'number'}, {'id': 'name', 'type': 'string'}]
 
 
 class MongoDbBackendTest(unittest.TestCase):
@@ -56,7 +56,9 @@ class MongoDbBackendTest(unittest.TestCase):
 
         cntr_mock.create_resource.assert_called_with('resource_123', 'id')
         cntr_mock.upsert.assert_called_with('resource_123', {'id': 1, 'name': 'florian', 'age': 27})
-        cntr_mock.update_datatypes.assert_not_called()
+        cntr_mock.update_schema.assert_called_with('resource_123',
+                                                   [{'type': 'number', 'id': 'id'}, {'type': 'string', 'id': 'name'},
+                                                    {'type': 'number', 'id': 'age'}])
 
     def test_create_with_datatype_info(self):
         data_dict = {
@@ -74,10 +76,10 @@ class MongoDbBackendTest(unittest.TestCase):
 
         cntr_mock.create_resource.assert_called_with('resource_123', 'id')
         cntr_mock.upsert.assert_called_with('resource_123', [{'id': 1, 'name': 'florian', 'age': 27}])
-        cntr_mock.update_datatypes.assert_called_with('resource_123',
-                                                      [{'id': 'id', 'type': 'number'}, {'id': 'name', 'type': 'string'},
-                                                       {'id': 'age', 'type': 'string',
-                                                        'info': {'type_override': 'number'}}])
+        cntr_mock.update_schema.assert_called_with('resource_123',
+                                                   [{'id': 'id', 'type': 'number'}, {'id': 'name', 'type': 'string'},
+                                                    {'id': 'age', 'type': 'string',
+                                                     'info': {'type_override': 'number'}}])
 
     def test_upsert(self):
         data_dict = {
@@ -166,12 +168,14 @@ class MongoDbBackendTest(unittest.TestCase):
 
         cntr_mock = MagicMock()
         cntr_mock.query_current_state.return_value = {'fields': None, 'pid': 123}
-
+        cntr_mock.resource_fields.return_value = {
+            'schema': [{'id': 'age', 'type': 'int'}, {'id': 'name', 'type': 'string'}]}
         self.backend.mongo_cntr = cntr_mock
 
         self.backend.search({}, data_dict)
 
-        cntr_mock.query_current_state.assert_called_with('resource_123', {'age': 20, 'name': 'florian'}, {}, None, 0,
+        cntr_mock.query_current_state.assert_called_with('resource_123', {'age': 20, 'name': 'florian'},
+                                                         {'age': 1, 'name': 1}, None, 0,
                                                          100, False, True, 'objects')
 
     def test_search_sql(self):
