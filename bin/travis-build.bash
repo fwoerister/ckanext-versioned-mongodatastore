@@ -8,7 +8,7 @@ sudo apt-get update
 sudo apt-get install solr-jetty redis-server
 
 echo "fix solr installation"
-sudo mkdir /etc/systemd/system/jetty9.service.d
+sudo mkdir -p /etc/systemd/system/jetty9.service.d
 sudo cp jetty9 /etc/systemd/system/jetty9.service.d
 
 sudo rm /etc/solr/solr-jetty.xml
