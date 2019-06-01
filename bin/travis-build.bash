@@ -36,8 +36,8 @@ echo "Creating the PostgreSQL user and database..."
 sudo -u postgres psql -c "CREATE USER ckan_default WITH PASSWORD 'pass';"
 sudo -u postgres psql -c 'CREATE DATABASE ckan_test WITH OWNER ckan_default;'
 
-sudo -u postgres psql -c "CREATE USER test_query_store WITH PASSWORD 'test_query_store';"
-sudo -u postgres psql -c 'CREATE DATABASE test_query_store WITH OWNER test_query_store;'
+sudo -u postgres psql -c "CREATE USER query_store WITH PASSWORD 'query_store';"
+sudo -u postgres psql -c 'CREATE DATABASE query_store WITH OWNER query_store;'
 
 sudo -u postgres psql -c "CREATE USER test_import_db WITH PASSWORD 'test_import_db';"
 sudo -u postgres psql -c 'CREATE DATABASE test_import_db WITH OWNER test_import_db;'
@@ -50,7 +50,7 @@ sed -i -e 's/solr_url.*/solr_url = http:\/\/127.0.0.1:8983\/solr/' ckan/test-cor
 
 echo "Initialising the database..."
 cd ckan
-paster db init -c ckan/test-core.ini
+paster db init -c test-core.ini
 cd -
 
 echo "Installing ckanext-pages and its requirements..."
