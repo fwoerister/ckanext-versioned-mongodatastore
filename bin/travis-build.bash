@@ -7,15 +7,15 @@ echo "Installing the packages that CKAN requires..."
 sudo apt-get update
 sudo apt-get install solr-jetty redis-server
 
-echo "fix solr installation"
-sudo mkdir -p /etc/systemd/system/jetty9.service.d
-sudo cp jetty9 /etc/systemd/system/jetty9.service.d
+#echo "fix solr installation"
+#sudo mkdir -p /etc/systemd/system/jetty9.service.d
+#sudo cp jetty9 /etc/systemd/system/jetty9.service.d
 
-sudo rm /etc/solr/solr-jetty.xml
-sudo cp solr-jetty.xml /etc/solr/solr-jetty.xml
+#sudo rm /etc/solr/solr-jetty.xml
+#sudo cp solr-jetty.xml /etc/solr/solr-jetty.xml
 
-sudo systemctl daemon-reload
-sudo service jetty9 restart
+#sudo systemctl daemon-reload
+#sudo service jetty9 restart
 
 
 echo "Installing CKAN and its Python dependencies..."
