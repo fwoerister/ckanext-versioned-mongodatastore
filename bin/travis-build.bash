@@ -50,7 +50,7 @@ sed -i -e 's/solr_url.*/solr_url = http:\/\/127.0.0.1:8983\/solr/' ckan/test-cor
 
 echo "Initialising the database..."
 cd ckan
-paster db init -c test-core.ini
+paster db init -c ckan/test-core.ini
 cd -
 
 echo "Installing ckanext-pages and its requirements..."
