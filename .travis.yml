@@ -3,10 +3,7 @@ python:
   - "2.7"
 env:
   - CKANVERSION=2.7
-before_install:
-  - docker build --rm=false -f bin/solr/Dockerfile -t solr .
 install:
-  - docker run -d --name solr solr
   - bash bin/travis-build.bash
 services:
   - mongodb
