@@ -30,6 +30,10 @@ echo "start solr"
 docker build --rm=false -f bin/solr/Dockerfile -t solr .
 docker run -d --name solr solr
 
+#echo "check if solr is available ..."
+#echo "curl http://localhost:8983/solr/"
+#curl http://localhost:8983/solr/
+
 pip install -r requirements.txt
 pip install -r dev-requirements.txt
 cd -
@@ -44,9 +48,7 @@ sudo -u postgres psql -c 'CREATE DATABASE query_store WITH OWNER query_store;'
 sudo -u postgres psql -c "CREATE USER test_import_db WITH PASSWORD 'test_import_db';"
 sudo -u postgres psql -c 'CREATE DATABASE test_import_db WITH OWNER test_import_db;'
 
-echo "check if solr is available ..."
-echo "curl http://localhost:8983/solr/"
-curl http://localhost:8983/solr/
+
 
 echo "Initialising the database..."
 cd ckan
