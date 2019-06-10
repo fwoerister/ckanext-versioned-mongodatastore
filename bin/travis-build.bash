@@ -5,7 +5,7 @@ echo "This is travis-build.bash..."
 
 echo "Installing the packages that CKAN requires..."
 sudo apt-get update
-sudo apt-get install python-dev libpq-dev python-pip python-virtualenv git-core openjdk-8-jdk redis-server
+sudo apt-get install python-dev libpq-dev python-pip python-virtualenv git-core openjdk-8-jdk redis-server postgresql
 
 
 echo "Installing CKAN and its Python dependencies..."
@@ -30,8 +30,8 @@ pip install -r dev-requirements.txt
 cd -
 
 echo "start solr"
-docker build --rm=false -f bin/solr/Dockerfile -t solr .
-docker run -d --name solr solr
+#sudo docker build --rm=false -f bin/solr/Dockerfile -t solr .
+#sudo docker run -d --name solr solr
 
 #echo "check if solr is available ..."
 #echo "curl http://localhost:8983/solr/"
