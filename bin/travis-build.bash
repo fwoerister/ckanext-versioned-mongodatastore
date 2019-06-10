@@ -24,8 +24,7 @@ fi
 sed -i '/psycopg2/c\psycopg2' requirements.txt
 python setup.py develop
 
-echo "pwd:"
-pwd
+cd -
 
 echo "start solr"
 docker build --rm=false -f bin/solr/Dockerfile -t solr .
