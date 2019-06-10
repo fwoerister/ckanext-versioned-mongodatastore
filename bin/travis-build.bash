@@ -5,7 +5,15 @@ echo "This is travis-build.bash..."
 
 echo "Installing the packages that CKAN requires..."
 sudo apt-get update
-sudo apt-get install python-dev libpq-dev python-pip python-virtualenv git-core openjdk-8-jdk redis-server postgresql
+sudo apt-get install python-dev libpq-dev python-pip python-virtualenv git-core openjdk-8-jdk redis-server
+
+sudo apt-get install wget ca-certificates
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib
 
 
 echo "Installing CKAN and its Python dependencies..."
