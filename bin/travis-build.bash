@@ -22,7 +22,10 @@ fi
 # Unpin CKAN's psycopg2 dependency get an important bugfix
 # https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
 sed -i '/psycopg2/c\psycopg2' requirements.txt
+
 python setup.py develop
+pip install -r requirements.txt
+pip install -r dev-requirements.txt
 
 cd -
 
@@ -33,10 +36,6 @@ docker run -d --name solr solr
 #echo "check if solr is available ..."
 #echo "curl http://localhost:8983/solr/"
 #curl http://localhost:8983/solr/
-
-pip install -r requirements.txt
-pip install -r dev-requirements.txt
-cd -
 
 echo "Creating the PostgreSQL user and database..."
 sudo -u postgres psql -c "CREATE USER ckan_default WITH PASSWORD 'pass';"
