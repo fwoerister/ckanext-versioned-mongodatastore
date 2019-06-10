@@ -2,7 +2,6 @@ import hashlib
 from collections import OrderedDict
 from json import JSONEncoder
 
-CKAN_DATASTORE = 'CKAN_Datastore'
 
 HASH_ALGORITHM = hashlib.md5
 

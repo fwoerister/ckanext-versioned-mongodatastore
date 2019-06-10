@@ -5,12 +5,11 @@ from StringIO import StringIO
 from collections import OrderedDict
 from json import JSONEncoder
 
-import pymongo
 from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
 
-from ckanext.mongodatastore.helper import normalize_json, CKAN_DATASTORE, calculate_hash, HASH_ALGORITHM
+from ckanext.mongodatastore.helper import normalize_json, calculate_hash, HASH_ALGORITHM
 from ckanext.mongodatastore.query_store import QueryStore
 
 log = logging.getLogger(__name__)
@@ -26,6 +25,7 @@ type_conversion_dict = {
 
 }
 
+CKAN_DATASTORE = config.get(u'ckan.datastore.database')
 
 class MongoDbControllerException(Exception):
     pass
@@ -365,7 +365,7 @@ class MongoDbController:
             client = MongoClient(config.get(u'ckan.datastore.write_url'))
             querystore = QueryStore(config.get(u'ckan.querystore.url'))
             rows_max = config.get(u'ckan.datastore.search.rows_max', 100)
-            MongoDbController.instance = MongoDbController.__MongoDbController(client, CKAN_DATASTORE, querystore,
+            MongoDbController.instance = MongoDbController.__MongoDbController(client, config.get(u'ckan.datastore.database'), querystore,
                                                                                rows_max)
         return MongoDbController.instance
 
@@ -374,4 +374,4 @@ class MongoDbController:
         client = MongoClient(cfg.get(u'ckan.datastore.write_url'))
         querystore = QueryStore(cfg.get(u'ckan.querystore.url'))
         rows_max = config.get(u'ckan.datastore.search.rows_max', 100)
-        MongoDbController.instance = MongoDbController.__MongoDbController(client, CKAN_DATASTORE, querystore, rows_max)
+        MongoDbController.instance = MongoDbController.__MongoDbController(client, config.get(u'ckan.datastore.database'), querystore, rows_max)
