@@ -5,7 +5,7 @@ echo "This is travis-build.bash..."
 
 echo "Installing the packages that CKAN requires..."
 sudo apt-get update
-sudo apt-get install solr-jetty redis-server
+sudo apt-get install redis-server
 
 
 echo "Installing CKAN and its Python dependencies..."
@@ -47,7 +47,6 @@ sudo -u postgres psql -c 'CREATE DATABASE query_store WITH OWNER query_store;'
 
 sudo -u postgres psql -c "CREATE USER test_import_db WITH PASSWORD 'test_import_db';"
 sudo -u postgres psql -c 'CREATE DATABASE test_import_db WITH OWNER test_import_db;'
-
 
 
 echo "Initialising the database..."
