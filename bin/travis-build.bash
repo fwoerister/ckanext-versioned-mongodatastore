@@ -12,7 +12,7 @@ sudo apt-get -y install python-software-properties
 
 sudo touch /etc/apt/sources.list.d/pgdg.list
 
-echo "http://apt.postgresql.org/pub/repos/apt/ YOUR_UBUNTU_VERSION_HERE-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list
+echo "http://apt.postgresql.org/pub/repos/apt/ 14.04-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list
 
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 sudo apt-get update
