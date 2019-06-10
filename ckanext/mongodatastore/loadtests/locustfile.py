@@ -3,8 +3,8 @@ from locust import HttpLocust, TaskSet, task
 import random
 
 LOADTEST_USER = 'fwoerister'
-LOADTEST_API_KEY = '2fffc74c-85f2-47c3-8c9e-36dbd3724272'
-LOADTEST_RESOURCE_ID = '77a9f8bf-1775-4862-8072-ff7b6bbb46cb'
+LOADTEST_API_KEY = 'aab7917c-aa29-4bec-80b5-8a110cf78839'
+LOADTEST_RESOURCE_ID = 'a58777a0-2480-45f5-a26e-3314f7f1df4c'
 LOADTEST_OWNER_ORG = 'tu-wien'
 
 SCHEMA_FIELDS = ["id", "class",

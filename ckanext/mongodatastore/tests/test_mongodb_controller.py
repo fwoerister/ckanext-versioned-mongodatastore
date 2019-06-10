@@ -2,12 +2,14 @@ import copy
 import logging
 import unittest
 
-from ckanext.mongodatastore.helper import CKAN_DATASTORE
+from ckan.common import config
+
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, \
     MongoDbControllerException, QueryNotFoundException
 
 log = logging.getLogger(__name__)
 
+CKAN_DATASTORE = config.get(u'ckan.datastore.database')
 
 class MongoDbControllerTest(unittest.TestCase):
 
@@ -46,6 +48,11 @@ class MongoDbControllerTest(unittest.TestCase):
         ]
 
         instance.querystore.purge_query_store()
+
+    def tearDown(self):
+        instance = MongoDbController.getInstance()
+        instance.client.drop_database(CKAN_DATASTORE)
+        instance.datastore = instance.client.get_database(CKAN_DATASTORE)
 
     # helper function tests
 

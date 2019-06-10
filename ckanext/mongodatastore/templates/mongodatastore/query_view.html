@@ -105,13 +105,12 @@ action='dump_history_result_set', id=query.id, format='xml', bom='True') %}
     </span>
 </div>
 
-<!--
+
 {% set fields = h.datastore_dictionary(query.resource_id)%}
--->
+
 <!--
     TODO: change to server-side processing, if size of subsets becomes an issue!
 -->
-<!--
 <div>
     <table id="resultset"
            class="table table-striped table-bordered"
@@ -149,7 +148,7 @@ action='dump_history_result_set', id=query.id, format='xml', bom='True') %}
     </table>
 
 </div>
--->
+
 {% endblock %}
 
 {% block styles %}
