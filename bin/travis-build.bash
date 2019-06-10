@@ -30,6 +30,8 @@ echo "start solr"
 docker build --rm=false -f bin/solr/Dockerfile -t solr .
 docker run -d --name solr solr
 
+exit
+
 pip install -r requirements.txt
 pip install -r dev-requirements.txt
 cd -
