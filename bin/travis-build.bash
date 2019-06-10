@@ -65,6 +65,4 @@ echo "Initialising the querystore..."
 
 paster --plugin=ckanext-mongodatastore querystore create_schema --config=subdir/test.ini
 
-
-
 echo "travis-build.bash is done."
