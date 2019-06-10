@@ -42,12 +42,8 @@ sudo -u postgres psql -c 'CREATE DATABASE query_store WITH OWNER query_store;'
 sudo -u postgres psql -c "CREATE USER test_import_db WITH PASSWORD 'test_import_db';"
 sudo -u postgres psql -c 'CREATE DATABASE test_import_db WITH OWNER test_import_db;'
 
-
-echo "SOLR config..."
-# Solr is multicore for tests on ckan master, but it's easier to run tests on
-# Travis single-core. See https://github.com/ckan/ckan/issues/2972
-sed -i -e 's/solr_url.*/solr_url = http:\/\/127.0.0.1:8983\/solr/' test.ini
-
+echo "check if solr is available ..."
+echo "curl http://localhost:8983/solr/"
 curl http://localhost:8983/solr/
 
 echo "Initialising the database..."
