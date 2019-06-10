@@ -5,16 +5,27 @@ from StringIO import StringIO
 from collections import OrderedDict
 from json import JSONEncoder
 
-import pymongo
 from bson import ObjectId
 from ckan.common import config
 from pymongo import MongoClient
 
-from ckanext.mongodatastore.helper import normalize_json, CKAN_DATASTORE, calculate_hash, HASH_ALGORITHM
+from ckanext.mongodatastore.helper import normalize_json, calculate_hash, HASH_ALGORITHM
 from ckanext.mongodatastore.query_store import QueryStore
 
 log = logging.getLogger(__name__)
 
+type_conversion_dict = {
+    'string': str,
+    'str': str,
+    'char': str,
+    'integer': int,
+    'int': int,
+    'float': float,
+    'number': float,
+
+}
+
+CKAN_DATASTORE = config.get(u'ckan.datastore.database')
 
 class MongoDbControllerException(Exception):
     pass
@@ -45,9 +56,28 @@ def create_history_stage(fields, timestamp, id_key='id'):
     group_expression = OrderedDict()
     group_expression['_id'] = '${0}'.format(id_key)
 
-    for key in fields:
-        if key not in ['_id']:
-            group_expression[key] = {'$last': '${0}'.format(key)}
+    for field in fields:
+        if field not in ['_id']:
+            log.debug(str(field))
+            if 'info' in field.keys() and field['info'] is not None and 'type_override' in field['info'].keys():
+                type_override = field['info']['type_override']
+
+                if type_override == 'float':
+                    group_expression[field['id']] = {'$last': {'$convert': {'input': '${0}'.format(field['id']),
+                                                                            'to': 'double',
+                                                                            'onError': '${0}'.format(field['id'])}}}
+                elif type_override == 'string':
+                    group_expression[field['id']] = {'$last': {'$convert': {'input': '${0}'.format(field['id']),
+                                                                            'to': 'string',
+                                                                            'onError': '${0}'.format(field['id'])}}}
+                elif type_override == 'int':
+                    group_expression[field['id']] = {'$last': {'$convert': {'input': '${0}'.format(field['id']),
+                                                                            'to': 'int',
+                                                                            'onError': '${0}'.format(field['id'])}}}
+                else:
+                    group_expression[field['id']] = {'$last': '${0}'.format(field['id'])}
+            else:
+                group_expression[field['id']] = {'$last': '${0}'.format(field['id'])}
 
     group_expression['_deleted'] = {'$last': '$_deleted'}
 
@@ -65,19 +95,6 @@ def create_history_stage(fields, timestamp, id_key='id'):
     history_stage.append({'$project': {'_id': 0, '_deleted': 0}})
 
     return history_stage
-
-
-def fetch_latest_field_infos(field_collection, key, timestamp=None):
-    history_stage = create_history_stage(['id', 'type', 'info'], timestamp, key)
-
-    field_infos = {}
-
-    for field in field_collection.aggregate(history_stage):
-        if '_id' in field:
-            field.pop('_id')
-        field_infos[field['id']] = field
-
-    return field_infos
 
 
 class MongoDbController:
@@ -102,7 +119,7 @@ class MongoDbController:
         def __get_max_id(self, resource_id):
             col, _, _ = self.__get_collections(resource_id)
 
-            max_id_results = list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}]))
+            max_id_results = list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}], allowDiskUse=True))
 
             if len(max_id_results) == 0:
                 return None
@@ -142,45 +159,13 @@ class MongoDbController:
                 for id_to_delete in ids_to_delete:
                     col.insert_one({'id': id_to_delete['id'], '_deleted': True})
 
-        def update_datatypes(self, resource_id, fields):
-            col, meta, field_collection = self.__get_collections(resource_id)
+        def update_schema(self, resource_id, field_definitions):
+            collection, _, fields = self.__get_collections(resource_id)
+            fields.delete_many({})
+            fields.insert_many(field_definitions)
 
-            timestamp = self.__get_max_id(resource_id)
-
-            pipeline = [{'$match': {}}]
-
-            result = self.__query(resource_id, pipeline, timestamp, None, None, False)
-
-            meta_record = meta.find_one()
-            record_id = meta_record['record_id']
-
-            converter = {
-                'text': str,
-                'string': str,
-                'numeric': float,
-                'number': float
-            }
-
-            override_fields = [{'id': field['id'], 'new_type': field['info']['type_override']} for field in fields if
-                               'info' in field.keys() and field['info'] is not None and 'type_override' in field[
-                                   'info'].keys()]
-
-            for record in result['records']:
-
-                for field in override_fields:
-                    try:
-                        record[field['id']] = converter[field['new_type']](record[field['id']])
-                        log.debug('Could convert field {0} of record {1} in resource {2}'.format(field['id'],
-                                                                                                 record[record_id],
-                                                                                                 resource_id))
-                    except ValueError:
-                        log.debug('Could not convert field {0} of record {1} in resource {2}'.format(field['id'],
-                                                                                                     record[record_id],
-                                                                                                     resource_id))
-                self.upsert(resource_id, [record], False)
-
-            for field in fields:
-                field_collection.insert_one(field)
+            for field in field_definitions:
+                field.pop('_id')
 
         def upsert(self, resource_id, records, dry_run=False):
             col, meta, _ = self.__get_collections(resource_id)
@@ -198,6 +183,7 @@ class MongoDbController:
                 if not dry_run:
                     if self.__update_required(resource_id, record, record_id_key):
                         col.insert_one(record)
+                        record.pop('_id')
 
         def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
             q = self.querystore.retrieve_query(pid)
@@ -321,7 +307,7 @@ class MongoDbController:
             id_key = resource_fields['meta']['record_id']
             field_ids = [field['id'] for field in schema]
 
-            history_stage = create_history_stage(field_ids, timestamp, id_key)
+            history_stage = create_history_stage(schema, timestamp, id_key)
             pagination_stage = []
 
             if offset and offset > 0:
@@ -334,10 +320,10 @@ class MongoDbController:
                     pagination_stage.append({'$limit': self.rows_max})
                     limit = self.rows_max
 
-            resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline))
+            resultset_hash = calculate_hash(col.aggregate(history_stage + pipeline, allowDiskUse=True))
 
             if include_total:
-                count = list(col.aggregate(history_stage + pipeline + [{u'$count': u'count'}]))
+                count = list(col.aggregate(history_stage + pipeline + [{u'$count': u'count'}], allowDiskUse=True))
 
                 if len(count) == 0:
                     count = 0
@@ -346,7 +332,7 @@ class MongoDbController:
 
             query = JSONEncoder().encode(pipeline)
 
-            records = col.aggregate(history_stage + pipeline + pagination_stage)
+            records = col.aggregate(history_stage + pipeline + pagination_stage, allowDiskUse=True)
 
             query_hash = calculate_hash(query)
 
@@ -369,40 +355,9 @@ class MongoDbController:
             col, meta, fields = self.__get_collections(resource_id)
 
             meta_entry = meta.find_one()
+            schema = fields.find({}, {'_id': 0})
 
-            schema = []
-
-            stored_field_infos = fetch_latest_field_infos(fields, 'id', timestamp)
-
-            if show_all:
-                pipeline = []
-
-                if timestamp:
-                    pipeline = [{'$match': {'_id': {'$lte': timestamp}}}]
-                pipeline.append({'$project': {"arrayofkeyvalue": {'$objectToArray': '$$ROOT'}}})
-                pipeline.append({'$unwind': '$arrayofkeyvalue'})
-                pipeline.append({'$group': {'_id': None, 'keys': {'$addToSet': '$arrayofkeyvalue.k'}}})
-
-                result = col.aggregate(pipeline)
-                result = list(result)
-
-                if len(result) > 0:
-                    result = result[0]
-                    for key in sorted(result['keys']):
-                        if key not in ['_id', 'valid_to', 'id', '_deleted']:
-                            if key in stored_field_infos.keys():
-                                schema.append(stored_field_infos[key])
-                            else:
-                                schema.apend({'id': key, 'type': 'text'})
-                else:
-                    schema.append({'id': meta_entry['record_id'], 'type': 'number'})
-            else:
-                for key in sorted(stored_field_infos.keys()):
-                    schema.append(stored_field_infos[key])
-
-            result = {u'schema': schema, u'meta': meta.find_one()}
-
-            return result
+            return {'meta': meta_entry, 'schema': list(schema)}
 
     @classmethod
     def getInstance(cls):
@@ -410,7 +365,7 @@ class MongoDbController:
             client = MongoClient(config.get(u'ckan.datastore.write_url'))
             querystore = QueryStore(config.get(u'ckan.querystore.url'))
             rows_max = config.get(u'ckan.datastore.search.rows_max', 100)
-            MongoDbController.instance = MongoDbController.__MongoDbController(client, CKAN_DATASTORE, querystore,
+            MongoDbController.instance = MongoDbController.__MongoDbController(client, config.get(u'ckan.datastore.database'), querystore,
                                                                                rows_max)
         return MongoDbController.instance
 
@@ -419,4 +374,4 @@ class MongoDbController:
         client = MongoClient(cfg.get(u'ckan.datastore.write_url'))
         querystore = QueryStore(cfg.get(u'ckan.querystore.url'))
         rows_max = config.get(u'ckan.datastore.search.rows_max', 100)
-        MongoDbController.instance = MongoDbController.__MongoDbController(client, CKAN_DATASTORE, querystore, rows_max)
+        MongoDbController.instance = MongoDbController.__MongoDbController(client, config.get(u'ckan.datastore.database'), querystore, rows_max)

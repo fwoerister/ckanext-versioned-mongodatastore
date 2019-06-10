@@ -1,5 +1,6 @@
 import unittest
 
+from ckan.common import config
 from sqlalchemy.orm import sessionmaker
 
 from ckanext.mongodatastore.model import Query
@@ -8,6 +9,8 @@ from ckanext.mongodatastore.query_store import QueryStore
 
 TEST_RESOURCE_NAME = 'test_resource'
 PRIMARY_KEY = 'id'
+
+CKAN_DATASTORE = config.get(u'ckan.datastore.database')
 
 QUERY_STORE_URL = 'postgresql://query_store:query_store@localhost/query_store'
 
@@ -19,6 +22,11 @@ class QueryStoreTest(unittest.TestCase):
         cntr.create_resource(TEST_RESOURCE_NAME, PRIMARY_KEY)
         self.querystore = QueryStore('postgresql://query_store:query_store@localhost/query_store')
         self.querystore.purge_query_store()
+
+    def tearDown(self):
+        instance = MongoDbController.getInstance()
+        instance.client.drop_database(CKAN_DATASTORE)
+        instance.datastore = instance.client.get_database(CKAN_DATASTORE)
 
     def test_store_query(self):
         pid = self.querystore.store_query(TEST_RESOURCE_NAME, '{}', '5c86a1aaf6b1b8295695c666',

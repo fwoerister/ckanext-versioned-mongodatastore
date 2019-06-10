@@ -34,7 +34,7 @@ cd -
 
 echo "Creating the PostgreSQL user and database..."
 sudo -u postgres psql -c "CREATE USER ckan_default WITH PASSWORD 'pass';"
-sudo -u postgres psql -c 'CREATE DATABASE ckan_test WITH OWNER ckan_default;'
+sudo -u postgres psql -c 'CREATE DATABASE ckan_default WITH OWNER ckan_default;'
 
 sudo -u postgres psql -c "CREATE USER query_store WITH PASSWORD 'query_store';"
 sudo -u postgres psql -c 'CREATE DATABASE query_store WITH OWNER query_store;'

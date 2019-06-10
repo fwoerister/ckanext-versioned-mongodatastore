@@ -14,9 +14,9 @@ def raise_exeption(ex):
 
 def create_projection(schema, fields):
     projection = {}
-    for field in schema.keys():
-        if len(fields) == 0 or field in fields:
-            projection[field] = 1
+    for field in schema:
+        if len(fields) == 0 or field['id'] in fields:
+            projection[field['id']] = 1
 
     return projection
 
@@ -24,14 +24,14 @@ def create_projection(schema, fields):
 def transform_query_to_statement(query, schema):
     new_filter = {'$or': []}
 
-    for field in schema.keys():
-        if schema[field] == "number":
+    for field in schema:
+        if field['type'] == "number":
             try:
-                new_filter['$or'].append({field: float(query)})
+                new_filter['$or'].append({field['id']: float(query)})
             except TypeError:
-                new_filter['$or'].append({field: query})
+                new_filter['$or'].append({field['id']: query})
         else:
-            new_filter['$or'].append({field: query})
+            new_filter['$or'].append({field['id']: query})
 
     return new_filter
 
@@ -39,11 +39,15 @@ def transform_query_to_statement(query, schema):
 def transform_filter(filters, schema):
     new_filter = {}
 
+    schema_dict = {}
+    for field in schema:
+        schema_dict[field['id']] = field
+
     for key in filters.keys():
         if type(filters[key]) is list:
             values = []
 
-            if schema[key] == 'number':
+            if schema_dict[key]['type'] == 'number':
                 for val in filters[key]:
                     try:
                         values.append(float(val))
@@ -54,7 +58,7 @@ def transform_filter(filters, schema):
 
             new_filter[key] = {'$in': values}
         else:
-            if schema[key] == 'number':
+            if schema_dict[key]['type'] == 'number':
                 try:
                     new_filter[key] = float(filters[key])
                 except TypeError:
@@ -105,6 +109,8 @@ class MongoDataStoreBackend(DatastoreBackend):
             for field in fields:
                 log.debug(field)
 
+        self.mongo_cntr.update_schema(resource_id, fields)
+
         if primary_key:
             log.debug('The primary key for this resource is {0}'.format(primary_key))
         else:
@@ -114,9 +120,6 @@ class MongoDataStoreBackend(DatastoreBackend):
 
         if records:
             self.mongo_cntr.upsert(resource_id, records)
-
-        if any(('info' in field.keys()) for field in fields):
-            self.mongo_cntr.update_datatypes(resource_id, fields)
 
         return data_dict
 
@@ -189,7 +192,7 @@ class MongoDataStoreBackend(DatastoreBackend):
 
         schema = self.resource_fields(data_dict['resource_id'])['schema']
 
-        if type(fields) == str:
+        if type(fields) is not list:
             fields = fields.split(',')
         projection = create_projection(schema, fields)
 

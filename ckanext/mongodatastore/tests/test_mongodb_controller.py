@@ -2,12 +2,14 @@ import copy
 import logging
 import unittest
 
-from ckanext.mongodatastore.helper import CKAN_DATASTORE
+from ckan.common import config
+
 from ckanext.mongodatastore.mongodb_controller import convert_to_csv, MongoDbController, \
-    MongoDbControllerException, QueryNotFoundException, fetch_latest_field_infos
+    MongoDbControllerException, QueryNotFoundException
 
 log = logging.getLogger(__name__)
 
+CKAN_DATASTORE = config.get(u'ckan.datastore.database')
 
 class MongoDbControllerTest(unittest.TestCase):
 
@@ -47,61 +49,16 @@ class MongoDbControllerTest(unittest.TestCase):
 
         instance.querystore.purge_query_store()
 
+    def tearDown(self):
+        instance = MongoDbController.getInstance()
+        instance.client.drop_database(CKAN_DATASTORE)
+        instance.datastore = instance.client.get_database(CKAN_DATASTORE)
+
     # helper function tests
 
     def test_convert_to_csv(self):
         result = str(convert_to_csv(copy.deepcopy(self.DATA_RECORD), self.DATA_RECORD_KEYS))
         self.assertEqual(result, self.DATA_RECORD_CSV)
-
-    def test_fetch_latest_field_infos(self):
-        mongo_cntr = MongoDbController.getInstance()
-
-        fields = fetch_latest_field_infos(mongo_cntr.datastore.get_collection('{0}_fields'.format(self.RESOURCE_ID)),
-                                          self.PRIMARY_KEY, None)
-
-        self.assertEqual(fields, {})
-
-        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
-
-        fields = fetch_latest_field_infos(mongo_cntr.datastore.get_collection('{0}_fields'.format(self.RESOURCE_ID)),
-                                          self.PRIMARY_KEY, None)
-
-        expected = {}
-
-        for field in self.FIELDS:
-            if '_id' in field:
-                field.pop('_id')
-            expected[field['id']] = field
-
-        log.debug('fields: {0}'.format(fields))
-
-        self.assertEqual(fields, expected)
-
-    def test_fetch_latest_field_infos_with_ts(self):
-        mongo_cntr = MongoDbController.getInstance()
-
-        mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
-
-        fields = fetch_latest_field_infos(mongo_cntr.datastore.get_collection('{0}_fields'.format(self.RESOURCE_ID)),
-                                          'id', '000000000000000000000000')
-
-        self.assertEqual(fields, {})
-
-        fields = fetch_latest_field_infos(mongo_cntr.datastore.get_collection('{0}_fields'.format(self.RESOURCE_ID)),
-                                          'id', 'ffffffffffffffffffffffff')
-
-        expected = {}
-
-        for field in self.FIELDS:
-            if '_id' in field:
-                field.pop('_id')
-            expected[field['id']] = field
-
-        log.debug('fields: {0}'.format(fields))
-
-        self.assertEqual(fields, expected)
 
     # static function tests
 
@@ -130,7 +87,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
         all_ids = mongo_cntr.get_all_ids()
 
         self.assertIn(self.RESOURCE_ID, all_ids)
@@ -140,7 +97,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -156,7 +113,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -179,7 +136,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         for f in self.FIELDS:
             if '_id' in f.keys():
@@ -197,7 +154,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         for f in self.FIELDS:
             if '_id' in f:
@@ -212,8 +169,8 @@ class MongoDbControllerTest(unittest.TestCase):
 
         self.assertEqual(fields['schema'], self.FIELDS)
 
-        mongo_cntr.update_datatypes(self.RESOURCE_ID,
-                                    [{'id': 'field1', 'type': 'number', 'info': {'type_override': 'number'}}])
+        mongo_cntr.update_schema(self.RESOURCE_ID,
+                                 [{'id': 'field1', 'type': 'number', 'info': {'type_override': 'float'}}])
 
         result = mongo_cntr.query_current_state(self.RESOURCE_ID, {}, None, None, 0, 0, False, True)
 
@@ -224,7 +181,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -257,7 +214,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -269,7 +226,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, copy.deepcopy(self.FIELDS))
+        mongo_cntr.update_schema(self.RESOURCE_ID, copy.deepcopy(self.FIELDS))
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -304,7 +261,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -346,7 +303,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -376,7 +333,7 @@ class MongoDbControllerTest(unittest.TestCase):
         mongo_cntr = MongoDbController.getInstance()
 
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         mongo_cntr.upsert(self.RESOURCE_ID,
                           copy.deepcopy(self.DATA_RECORD) + [
@@ -394,7 +351,7 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_distinct_query(self):
         mongo_cntr = MongoDbController.getInstance()
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
@@ -409,7 +366,7 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_pagination(self):
         mongo_cntr = MongoDbController.getInstance()
         mongo_cntr.create_resource(self.RESOURCE_ID, self.PRIMARY_KEY)
-        mongo_cntr.update_datatypes(self.RESOURCE_ID, self.FIELDS)
+        mongo_cntr.update_schema(self.RESOURCE_ID, self.FIELDS)
 
         self.assertTrue(mongo_cntr.resource_exists(self.RESOURCE_ID))
 
