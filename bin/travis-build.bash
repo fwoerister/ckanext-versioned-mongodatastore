@@ -32,22 +32,12 @@ sudo apt-get -y install python-software-properties
 echo "Installing CKAN and its Python dependencies..."
 git clone https://github.com/ckan/ckan
 cd ckan
-if [ $CKANVERSION == 'master' ]
-then
-    echo "CKAN version: master"
-else
-    CKAN_TAG=$(git tag | grep ^ckan-$CKANVERSION | sort --version-sort | tail -n 1)
-    git checkout $CKAN_TAG
-    echo "CKAN version: ${CKAN_TAG#ckan-}"
-fi
-# Unpin CKAN's psycopg2 dependency get an important bugfix
-# https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
-sed -i '/psycopg2/c\psycopg2' requirements.txt
-
+export latest_ckan_release_branch=`git branch --all | grep remotes/origin/release-v | sort -r | sed 's/remotes\/origin\///g' | head -n 1`
+echo "CKAN branch: $latest_ckan_release_branch"
+git checkout $latest_ckan_release_branch
 python setup.py develop
-pip install -r requirements.txt
-pip install -r dev-requirements.txt
-
+pip install -r requirements.txt --allow-all-external
+pip install -r dev-requirements.txt --allow-all-external
 cd -
 
 echo "Creating the PostgreSQL user and database..."
