@@ -9,7 +9,7 @@ cd bin
 
 wget archive.apache.org/dist/lucene/solr/6.5.0/solr-6.5.0.tgz
 
-unzip solr-6.5.0.tgz
+tar -xvf solr-6.5.0.tgz
 cd solr-6.5.0/bin
 
 sudo install_solr_service.sh ../../solr-6.5.0.tgz
