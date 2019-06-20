@@ -42,12 +42,15 @@ pip install -r dev-requirements.txt
 cd -
 
 echo "start solr"
+
+curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="solrconfig.xml" bash
+
 #sudo docker build --rm=false -f bin/solr/Dockerfile -t solr .
 #sudo docker run -d --name solr solr
 
-#echo "check if solr is available ..."
-#echo "curl http://localhost:8983/solr/"
-#curl http://localhost:8983/solr/
+echo "check if solr is available ..."
+echo "curl http://localhost:8983/solr/"
+curl http://localhost:8983/solr/
 
 echo "Creating the PostgreSQL user and database..."
 sudo -u postgres psql -c "CREATE USER ckan_default WITH PASSWORD 'pass';"
