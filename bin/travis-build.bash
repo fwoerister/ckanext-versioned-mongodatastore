@@ -40,10 +40,10 @@ pip install -r dev-requirements.txt
 
 cd -
 
-#echo "start solr"
-#cd bin
-#curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="schema.xml solrconfig.xml" bash
-#cd -
+echo "start solr"
+cd bin
+curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="schema.xml solrconfig.xml" DEBUG=true bash
+cd -
 
 echo "check if solr is available ..."
 echo "curl http://localhost:8983/solr/"

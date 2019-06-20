@@ -18,7 +18,6 @@ env:
   global:
   - PGPORT=5432
 
-before_script: curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="bin/schema.xml bin/solrconfig.xml" bash
 script: sh bin/travis-run.sh
 after_success: coveralls
 sudo: required
