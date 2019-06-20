@@ -7,7 +7,7 @@ echo "start solr"
 
 cd bin
 
-wget http://apache.miloslavbrada.cz/lucene/solr/6.5.0/solr-6.5.0.tgz
+wget archive.apache.org/dist/lucene/solr/6.5.0/solr-6.5.0.tgz
 
 unzip solr-6.5.0.tgz
 cd solr-6.5.0/bin
