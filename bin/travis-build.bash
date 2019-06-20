@@ -21,7 +21,7 @@ sudo service jetty8 restart
 
 sudo mkdir /etc/systemd/system/jetty8.service.d
 sudo cp solr.conf /etc/systemd/system/jetty8.service.d/solr.conf
-sudo cp solr-jetty.xm /etc/solr/solr-jetty.xm
+sudo cp solr-jetty.xml /etc/solr/solr-jetty.xml
 
 sudo systemctl daemon-reload
 sudo service jetty8 restart
