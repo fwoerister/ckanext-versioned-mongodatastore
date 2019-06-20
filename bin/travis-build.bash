@@ -9,7 +9,6 @@ cd bin/solr
 
 sudo apt-get install solr-jetty
 
-sudo mkdir /var/lib/jetty8/webapps
 sudo ln -s solr-jetty.xml /var/lib/jetty8/webapps/solr.xml
 
 sudo rm /etc/default/jetty8
