@@ -26,6 +26,8 @@ sudo cp solr-jetty.xml /etc/solr/solr-jetty.xml
 sudo systemctl daemon-reload
 sudo service jetty8 restart
 
+sudo service jetty8 status
+
 cd -
 
 echo "check if solr is available ..."
