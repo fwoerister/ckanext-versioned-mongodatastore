@@ -7,6 +7,10 @@ echo "start solr"
 
 mkdir ../solr && pushd ../solr
 wget http://archive.apache.org/dist/lucene/solr/3.6.1/apache-solr-3.6.1.tgz
+
+cd apache-solr-3.6.1.tgz/apache-solr-3.6.1/example
+java -Djetty.port=$solr_port -Dsolr.solr.home=multicore -jar start.jar
+
 tar xzf apache-solr-3.6.1.tgz && ./apache-solr-3.6.1.tgz/bin/solr -c -e schemaless
 
 echo "check if solr is available ..."
