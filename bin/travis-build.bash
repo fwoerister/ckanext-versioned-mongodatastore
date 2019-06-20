@@ -4,9 +4,10 @@ set -e
 echo "This is travis-build.bash..."
 
 echo "start solr"
-cd bin
-curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="schema.xml solrconfig.xml" DEBUG=true bash
-cd -
+
+mkdir ../solr && pushd ../solr
+wget http://archive.apache.org/dist/lucene/solr/3.6.1/solr-3.6.1.tgz
+tar xzf solr-3.6.1.tgz && ./solr-3.6.1/bin/solr -c -e schemaless
 
 echo "check if solr is available ..."
 echo "curl http://localhost:8983/solr/"
