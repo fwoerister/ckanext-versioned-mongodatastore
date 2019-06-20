@@ -5,14 +5,28 @@ echo "This is travis-build.bash..."
 
 echo "start solr"
 
-mkdir ../solr && pushd ../solr
-wget http://archive.apache.org/dist/lucene/solr/3.6.1/apache-solr-3.6.1.tgz
+cd bin/solr
 
-tar xzf apache-solr-3.6.1.tgz
+sudo apt-get install solr-jetty
 
-cd apache-solr-3.6.1/example
-java -Djetty.port=$solr_port -Dsolr.solr.home=multicore -jar start.jar
+sudo ln -s /etc/solr/solr-jetty.xml /var/lib/jetty9/webapps/solr.xml
 
+sudo rm /etc/default/jetty9
+sudo rm /etc/jetty9/start.ini
+
+sudo cp jetty9 /etc/default/jetty9
+sudo cp start.ini /etc/jetty9/start.ini
+
+sudo service jetty9 restart
+
+sudo mkdir /etc/systemd/system/jetty9.service.d
+sudo cp solr.conf /etc/systemd/system/jetty9.service.d/solr.conf
+sudo cp solr-jetty.xm /etc/solr/solr-jetty.xm
+
+sudo systemctl daemon-reload
+sudo service jetty9 restart
+
+cd -
 
 echo "check if solr is available ..."
 echo "curl http://localhost:8983/solr/"
