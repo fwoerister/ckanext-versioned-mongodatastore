@@ -42,7 +42,7 @@ cd -
 
 echo "start solr"
 
-curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="solrconfig.xml" bash
+curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="schema.xml solrconfig.xml" bash
 
 #sudo docker build --rm=false -f bin/solr/Dockerfile -t solr .
 #sudo docker run -d --name solr solr
