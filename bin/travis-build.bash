@@ -58,8 +58,6 @@ pip install -r dev-requirements.txt
 
 cd -
 
-
-
 echo "Creating the PostgreSQL user and database..."
 sudo -u postgres psql -c "CREATE USER ckan_default WITH PASSWORD 'pass';"
 sudo -u postgres psql -c 'CREATE DATABASE ckan_default WITH OWNER ckan_default;'
@@ -73,7 +71,7 @@ sudo -u postgres psql -c 'CREATE DATABASE test_import_db WITH OWNER test_import_
 
 echo "Initialising the database..."
 cd ckan
-paster db init -c test-core.ini
+paster db init -c test.ini
 cd -
 
 echo "Installing ckanext-pages and its requirements..."
