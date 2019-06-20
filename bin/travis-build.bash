@@ -5,7 +5,7 @@ echo "This is travis-build.bash..."
 
 echo "start solr"
 cd bin
-curl -sSL https://raw.githubusercontent.com/fwoerister/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="schema.xml solrconfig.xml" DEBUG=true bash
+curl -sSL https://raw.githubusercontent.com/moliware/travis-solr/master/travis-solr.sh | SOLR_VERSION=3.6.1 SOLR_CONFS="schema.xml solrconfig.xml" DEBUG=true bash
 cd -
 
 echo "check if solr is available ..."
