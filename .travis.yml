@@ -7,6 +7,16 @@ install:
   - bash bin/travis-build.bash
 services:
   - mongodb
+  - postgresql
+addons:
+  postgresql: "10"
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
+env:
+  global:
+  - PGPORT=5432
 
 script: sh bin/travis-run.sh
 after_success: coveralls

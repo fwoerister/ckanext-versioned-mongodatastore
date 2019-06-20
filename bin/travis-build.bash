@@ -9,15 +9,14 @@ sudo apt-get install python-dev libpq-dev python-pip python-virtualenv git-core 
 
 sudo apt-get update
 sudo apt-get -y install python-software-properties
-
-sudo touch /etc/apt/sources.list.d/pgdg.list
-
-echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list
-
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-sudo apt-get update
-
-apt-get install postgresql-10
+#
+#sudo touch /etc/apt/sources.list.d/pgdg.list
+#
+#echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | sudo tee -a /etc/apt/sources.list.d/pgdg.list
+#
+#wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+#sudo apt-get update
+#apt-get install postgresql-10
 
 
 echo "Installing CKAN and its Python dependencies..."
