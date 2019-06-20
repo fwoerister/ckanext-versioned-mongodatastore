@@ -9,23 +9,23 @@ cd bin/solr
 
 sudo apt-get install solr-jetty
 
-sudo mkdir /var/lib/jetty9/webapps
-sudo ln -s solr-jetty.xml /var/lib/jetty9/webapps/solr.xml
+sudo mkdir /var/lib/jetty8/webapps
+sudo ln -s solr-jetty.xml /var/lib/jetty8/webapps/solr.xml
 
-sudo rm /etc/default/jetty9
-sudo rm /etc/jetty9/start.ini
+sudo rm /etc/default/jetty8
+sudo rm /etc/jetty8/start.ini
 
-sudo cp jetty9 /etc/default/jetty9
-sudo cp start.ini /etc/jetty9/start.ini
+sudo cp jetty8 /etc/default/jetty8
+sudo cp start.ini /etc/jetty8/start.ini
 
-sudo service jetty9 restart
+sudo service jetty8 restart
 
-sudo mkdir /etc/systemd/system/jetty9.service.d
-sudo cp solr.conf /etc/systemd/system/jetty9.service.d/solr.conf
+sudo mkdir /etc/systemd/system/jetty8.service.d
+sudo cp solr.conf /etc/systemd/system/jetty8.service.d/solr.conf
 sudo cp solr-jetty.xm /etc/solr/solr-jetty.xm
 
 sudo systemctl daemon-reload
-sudo service jetty9 restart
+sudo service jetty8 restart
 
 cd -
 
