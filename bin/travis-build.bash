@@ -6,8 +6,8 @@ echo "This is travis-build.bash..."
 echo "start solr"
 
 mkdir ../solr && pushd ../solr
-wget http://archive.apache.org/dist/lucene/solr/3.6.1/solr-3.6.1.tgz
-tar xzf solr-3.6.1.tgz && ./solr-3.6.1/bin/solr -c -e schemaless
+wget http://archive.apache.org/dist/lucene/solr/3.6.1/apache-solr-3.6.1.tgz
+tar xzf apache-solr-3.6.1.tgz && ./apache-solr-3.6.1.tgz/bin/solr -c -e schemaless
 
 echo "check if solr is available ..."
 echo "curl http://localhost:8983/solr/"
