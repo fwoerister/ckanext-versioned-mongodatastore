@@ -36,8 +36,8 @@ export latest_ckan_release_branch=`git branch --all | grep remotes/origin/releas
 echo "CKAN branch: $latest_ckan_release_branch"
 git checkout $latest_ckan_release_branch
 python setup.py develop
-pip install -r requirements.txt --allow-all-external
-pip install -r dev-requirements.txt --allow-all-external
+pip install -r requirements.txt
+pip install -r dev-requirements.txt
 cd -
 
 echo "Creating the PostgreSQL user and database..."
