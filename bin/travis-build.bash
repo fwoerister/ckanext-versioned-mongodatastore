@@ -5,28 +5,15 @@ echo "This is travis-build.bash..."
 
 echo "start solr"
 
-cd bin/solr
+cd bin
 
-sudo apt-get install solr-jetty
+wget http://apache.miloslavbrada.cz/lucene/solr/6.5.0/solr-6.5.0.tgz
 
-sudo ln -s solr-jetty.xml /var/lib/jetty8/webapps/solr.xml
+unzip solr-6.5.0.tgz
+cd solr-6.5.0/bin
 
-sudo rm /etc/default/jetty8
-sudo rm /etc/jetty8/start.ini
+sudo install_solr_service.sh ../../solr-6.5.0.tgz
 
-sudo cp jetty8 /etc/default/jetty8
-sudo cp start.ini /etc/jetty8/start.ini
-
-sudo service jetty8 restart
-
-sudo mkdir /etc/systemd/system/jetty8.service.d
-sudo cp solr.conf /etc/systemd/system/jetty8.service.d/solr.conf
-sudo cp solr-jetty.xml /etc/solr/solr-jetty.xml
-
-sudo systemctl daemon-reload
-sudo service jetty8 restart
-
-sudo service jetty8 status
 
 cd -
 
