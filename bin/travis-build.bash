@@ -32,7 +32,7 @@ sudo apt-get -y install python-software-properties
 echo "Installing CKAN and its Python dependencies..."
 git clone https://github.com/ckan/ckan
 cd ckan
-git checkout ckan-2.8.2
+git checkout master
 python setup.py develop
 pip install -r requirements.txt
 pip install -r dev-requirements.txt
