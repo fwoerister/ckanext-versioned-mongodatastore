@@ -187,7 +187,7 @@ class MongoDataStoreBackend(DatastoreBackend):
         log_parameter_not_used_warning([('plain', plain), ('language', language),
                                         ('total_estimation_threshold', total_estimation_threshold)])
 
-        if records_format in ['tsv', 'list']:
+        if records_format in ['tsv', 'lists']:
             abort(501, "Unfortunately the current version of MongoDatastore only supports CSV exports!")
 
         schema = self.resource_fields(data_dict['resource_id'])['schema']
