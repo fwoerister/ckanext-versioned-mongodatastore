@@ -11,8 +11,7 @@ TEST_RESOURCE_NAME = 'test_resource'
 PRIMARY_KEY = 'id'
 
 CKAN_DATASTORE = config.get(u'ckan.datastore.database')
-
-QUERY_STORE_URL = 'postgresql://query_store:query_store@localhost/query_store'
+QUERY_STORE_URL = config.get(u'ckan.querystore.url')
 
 
 class QueryStoreTest(unittest.TestCase):
@@ -20,7 +19,7 @@ class QueryStoreTest(unittest.TestCase):
     def setUp(self):
         cntr = MongoDbController.getInstance()
         cntr.create_resource(TEST_RESOURCE_NAME, PRIMARY_KEY)
-        self.querystore = QueryStore('postgresql://query_store:query_store@localhost/query_store')
+        self.querystore = QueryStore(QUERY_STORE_URL)
         self.querystore.purge_query_store()
 
     def tearDown(self):

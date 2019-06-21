@@ -12,3 +12,4 @@ nosetests --ckan \
           --cover-inclusive \
           --cover-erase \
           --cover-tests
+          -c test.ini
