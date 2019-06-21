@@ -2,8 +2,7 @@ dist: xenial
 language: python
 python:
   - "2.7"
-env:
-  - CKANVERSION=master
+
 install:
   - bash bin/travis-build.bash
 services:
