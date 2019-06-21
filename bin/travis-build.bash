@@ -15,7 +15,7 @@ cd solr-6.5.0/bin
 sudo ./install_solr_service.sh ../../solr-6.5.0.tgz
 
 
-cd -
+cd ../../..
 
 echo "check if solr is available ..."
 echo "curl http://localhost:8983/solr/"
@@ -54,7 +54,8 @@ cd ckan
 paster db init -c test.ini
 cd -
 
-echo "Installing ckanext-pages and its requirements..."
+echo "Installing ckanext-mongodatastore and its requirements..."
+
 python setup.py develop
 pip install -r requirements.txt
 
