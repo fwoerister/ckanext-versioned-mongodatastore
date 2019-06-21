@@ -4,8 +4,6 @@ echo "NO_START=0\nJETTY_HOST=127.0.0.1\nJETTY_PORT=8983\nJAVA_HOME=$JAVA_HOME" |
 sudo cp ckan/ckan/config/solr/schema.xml /etc/solr/conf/schema.xml
 sudo service jetty restart
 
-curl http://localhost:8983/solr/
-
 nosetests --ckan \
           --nologcapture \
           --with-pylons=subdir/test.ini \
@@ -13,4 +11,4 @@ nosetests --ckan \
           --cover-package=ckanext.mongodatastore \
           --cover-inclusive \
           --cover-erase \
-          --cover-tests#
+          --cover-tests
