@@ -6,11 +6,11 @@ sudo service jetty restart
 
 curl http://localhost:8983/solr/
 
-#nosetests --ckan \
-#          --nologcapture \
-#          --with-pylons=subdir/test.ini \
-#          --with-coverage \
-#          --cover-package=ckanext.mongodatastore \
-#          --cover-inclusive \
-#          --cover-erase \
-#          --cover-tests#
+nosetests --ckan \
+          --nologcapture \
+          --with-pylons=subdir/test.ini \
+          --with-coverage \
+          --cover-package=ckanext.mongodatastore \
+          --cover-inclusive \
+          --cover-erase \
+          --cover-tests#
