@@ -71,7 +71,7 @@ class MongoDbControllerTest(unittest.TestCase):
     def test_reaload_config(self):
         new_cfg = {
             'ckan.datastore.write_url': 'localhost:27017',
-            'ckan.querystore.url': 'postgresql://query_store:query_store@localhost/query_store',
+            'ckan.querystore.url': 'postgresql://test_query_store:test_query_store@localhost/test_query_store',
             'ckan.datastore.search.rows_max': 120
         }
 
