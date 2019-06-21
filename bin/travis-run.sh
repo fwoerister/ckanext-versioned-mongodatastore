@@ -11,4 +11,5 @@ nosetests --ckan \
           --cover-package=ckanext.mongodatastore \
           --cover-inclusive \
           --cover-erase \
-          --cover-tests
+          --cover-tests \
+          -c test.ini

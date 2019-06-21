@@ -71,7 +71,7 @@ class MongoDatastoreControllerTest(unittest.TestCase):
                     u'type': u'dataset', u'resources': [
                 {u'mimetype': None, u'cache_url': None, u'hash': u'', u'description': u'',
                  u'name': u'query_store', u'format': u'database',
-                 u'url': u'postgres://query_store:query_store@localhost/query_store', u'datastore_active': True,
+                 u'url': u'postgres://test_query_store:test_query_store@localhost/test_query_store', u'datastore_active': True,
                  u'cache_last_updated': None, u'package_id': u'accae748-7980-424b-b4d3-707a4aab3aad',
                  u'created': u'2019-03-14T22:45:17.252441', u'state': u'active', u'mimetype_inner': None,
                  u'last_modified': None, u'position': 0,
@@ -111,7 +111,7 @@ class MongoDatastoreControllerTest(unittest.TestCase):
 
         self.res = {u'mimetype': None, u'cache_url': None, u'hash': u'', u'description': u'',
                     u'name': u'query_store', u'format': u'database',
-                    u'url': u'postgres://query_store:query_store@localhost/query_store', u'datastore_active': True,
+                    u'url': u'postgres://test_query_store:test_query_store@localhost/test_query_store', u'datastore_active': True,
                     u'cache_last_updated': None, u'package_id': u'accae748-7980-424b-b4d3-707a4aab3aad',
                     u'created': u'2019-03-14T22:45:17.252441', u'state': u'active', u'mimetype_inner': None,
                     u'last_modified': None, u'position': 0, u'revision_id': u'482b4bef-a234-43eb-961c-c57f1353226c',

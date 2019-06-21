@@ -1,15 +1,19 @@
+dist: xenial
 language: python
 python:
   - "2.7"
 env:
-  - CKANVERSION=2.7
+  - CKANVERSION=master
 install:
   - bash bin/travis-build.bash
 services:
-  - postgresql
   - mongodb
-addons:
-  postgresql: "9.3"
+  - postgresql
+
+env:
+  global:
+  - PGPORT=5432
+
 script: sh bin/travis-run.sh
 after_success: coveralls
 sudo: required
