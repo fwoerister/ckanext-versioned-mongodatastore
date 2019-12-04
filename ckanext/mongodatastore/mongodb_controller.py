@@ -22,10 +22,12 @@ type_conversion_dict = {
     'int': int,
     'float': float,
     'number': float,
+    'numeric': float
 
 }
 
 CKAN_DATASTORE = config.get(u'ckan.datastore.database')
+
 
 class MongoDbControllerException(Exception):
     pass
@@ -97,6 +99,13 @@ def create_history_stage(fields, timestamp, id_key='id'):
     return history_stage
 
 
+def convert_fields(record, data_type_dict):
+    for key in record:
+        if record[key]:
+            record[key] = data_type_dict[key](record[key])
+    return record
+
+
 class MongoDbController:
     def __init__(self):
         pass
@@ -119,7 +128,8 @@ class MongoDbController:
         def __get_max_id(self, resource_id):
             col, _, _ = self.__get_collections(resource_id)
 
-            max_id_results = list(col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}], allowDiskUse=True))
+            max_id_results = list(
+                col.aggregate([{'$group': {'_id': '', 'max_id': {'$max': '$_id'}}}], allowDiskUse=True))
 
             if len(max_id_results) == 0:
                 return None
@@ -168,9 +178,16 @@ class MongoDbController:
                 field.pop('_id')
 
         def upsert(self, resource_id, records, dry_run=False):
-            col, meta, _ = self.__get_collections(resource_id)
+            col, meta, fields = self.__get_collections(resource_id)
 
             record_id_key = meta.find_one()['record_id']
+            data_type_dict = {}
+
+            for field in fields.find():
+                if field['type'] == 'numeric':
+                    data_type_dict[field['id']] = float
+                else:
+                    data_type_dict[field['id']] = str
 
             records_without_id = [record for record in records if record_id_key not in record.keys()]
 
@@ -181,8 +198,9 @@ class MongoDbController:
 
             for record in records:
                 if not dry_run:
-                    if self.__update_required(resource_id, record, record_id_key):
-                        col.insert_one(record)
+                    converted_record = convert_fields(record, data_type_dict)
+                    if self.__update_required(resource_id, converted_record, record_id_key):
+                        col.insert_one(converted_record)
                         record.pop('_id')
 
         def retrieve_stored_query(self, pid, offset, limit, records_format='objects'):
@@ -365,7 +383,9 @@ class MongoDbController:
             client = MongoClient(config.get(u'ckan.datastore.write_url'))
             querystore = QueryStore(config.get(u'ckan.querystore.url'))
             rows_max = config.get(u'ckan.datastore.search.rows_max', 100)
-            MongoDbController.instance = MongoDbController.__MongoDbController(client, config.get(u'ckan.datastore.database'), querystore,
+            MongoDbController.instance = MongoDbController.__MongoDbController(client,
+                                                                               config.get(u'ckan.datastore.database'),
+                                                                               querystore,
                                                                                rows_max)
         return MongoDbController.instance
 
@@ -374,4 +394,6 @@ class MongoDbController:
         client = MongoClient(cfg.get(u'ckan.datastore.write_url'))
         querystore = QueryStore(cfg.get(u'ckan.querystore.url'))
         rows_max = config.get(u'ckan.datastore.search.rows_max', 100)
-        MongoDbController.instance = MongoDbController.__MongoDbController(client, config.get(u'ckan.datastore.database'), querystore, rows_max)
+        MongoDbController.instance = MongoDbController.__MongoDbController(client,
+                                                                           config.get(u'ckan.datastore.database'),
+                                                                           querystore, rows_max)

@@ -30,6 +30,3 @@ def querystore_resolve(context, data_dict):
 
 def datastore_restore(context, data_dict):
     raise NotImplementedError()
-
-def download_file(context, data_dict):
-    pass

@@ -47,7 +47,7 @@ def transform_filter(filters, schema):
         if type(filters[key]) is list:
             values = []
 
-            if schema_dict[key]['type'] == 'number':
+            if schema_dict[key]['type'] in ['number', 'numeric']:
                 for val in filters[key]:
                     try:
                         values.append(float(val))
@@ -58,7 +58,7 @@ def transform_filter(filters, schema):
 
             new_filter[key] = {'$in': values}
         else:
-            if schema_dict[key]['type'] == 'number':
+            if schema_dict[key]['type'] in ['number', 'numeric']:
                 try:
                     new_filter[key] = float(filters[key])
                 except TypeError:
