@@ -23,7 +23,6 @@ type_conversion_dict = {
     'float': float,
     'number': float,
     'numeric': float
-
 }
 
 CKAN_DATASTORE = config.get(u'ckan.datastore.database')
@@ -102,7 +101,13 @@ def create_history_stage(fields, timestamp, id_key='id'):
 def convert_fields(record, data_type_dict):
     for key in record:
         if record[key]:
-            record[key] = data_type_dict[key](record[key])
+            if data_type_dict[key] == float and (record[key] == '' or str(record[key]).isspace()):
+                record[key] = None
+            else:
+                try:
+                    record[key] = data_type_dict[key](record[key])
+                except ValueError as e:
+                    print(e)
     return record
 
 
@@ -217,7 +222,18 @@ class MongoDbController:
                                       True)
 
                 result['pid'] = pid
-                result['query'] = q
+
+                query = {
+                    'id': q.id,
+                    'resource_id': q.resource_id,
+                    'query': q.query,
+                    'query_hash': q.query_hash,
+                    'hash_algorithm': q.hash_algorithm,
+                    'result_set_hash': q.result_set_hash,
+                    'timestamp': q.timestamp
+                }
+
+                result['query'] = query
 
                 query = json.JSONDecoder(object_pairs_hook=OrderedDict).decode(q.query)
                 projection = [projection for projection in query if '$project' in projection.keys()][-1]['$project']

@@ -1,10 +1,13 @@
 import logging
 
+from ckan import logic
+
 from ckanext.mongodatastore.mongodb_controller import MongoDbController
 
 log = logging.getLogger(__name__)
 
 
+@logic.side_effect_free
 def querystore_resolve(context, data_dict):
     cntr = MongoDbController.getInstance()
 

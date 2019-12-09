@@ -17,3 +17,4 @@ class Query(Base):
     hash_algorithm = Column(TEXT)
     result_set_hash = Column(TEXT)
     timestamp = Column(TEXT)
+    handle_pid = Column(TEXT)
