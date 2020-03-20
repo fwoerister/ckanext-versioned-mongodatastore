@@ -445,7 +445,7 @@ class VersionedDataStoreController:
 class QueryStoreController:
     def __init__(self, querystore_url):
         self.engine = create_engine(querystore_url, echo=False)
-        cred = PIDClientCredentials.load_from_JSON('/etc/ckan/default/cred.json')
+        cred = PIDClientCredentials.load_from_JSON('/etc/ckan/cred.json')
         self.handle_client = PyHandleClient('rest').instantiate_with_credentials(cred)
 
     def _create_handle_entry(self, pid):
