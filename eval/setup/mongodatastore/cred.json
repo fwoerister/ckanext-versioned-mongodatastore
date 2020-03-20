@@ -1,0 +1,7 @@
+{
+    "client": "rest",
+    "handle_server_url": "https://handle_server:8000",
+    "username": "300:TEST/ADMIN",
+    "password": "ASECRETKEY",
+    "HTTPS_verify": false
+}
